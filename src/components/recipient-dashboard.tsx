@@ -78,6 +78,9 @@ const activeCampaigns = [
   },
 ];
 
+// Add this import at the top with other imports
+import Image from "next/image";
+
 export function RecipientDashboardComponent() {
   const walletAddress = useAccount().address;
   const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -219,7 +222,14 @@ export function RecipientDashboardComponent() {
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="flex justify-between items-center mb-8">
-          <div className="text-4xl font-bold text-white items-center">
+          <div className="text-4xl font-bold text-white items-center flex gap-2">
+            <Image
+              src="/doogly-logo.png" // Make sure to add your logo file to the public directory
+              alt="Doogly Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
             Doogly
           </div>
           <div>
