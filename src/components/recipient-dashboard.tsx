@@ -22,13 +22,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 import { useHypercertClient } from "@/hooks/useHypercertClient";
@@ -90,6 +83,31 @@ export function RecipientDashboardComponent() {
   // Add new state variables
   const [txId, setTxId] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  // Add new state variable for the allocation modal
+  const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
+
+  // Sample data for crypto addresses and ENS names
+  const cryptoAddresses = [
+    {
+      address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    },
+    {
+      address: "raffle.eth",
+    },
+    {
+      address: "prajjawal.eth",
+    },
+    {
+      address: "0x342d34Cc6634C0532925a3b844Bc454e4438f44e",
+    },
+    // Add more addresses and ENS names as needed
+  ];
+
+  // Add this function to handle allocation logic
+  const handleAllocateFunds = (address) => {
+    console.log("Allocating funds to:", address);
+    // Implement your allocation logic here
+  };
 
   async function getHypercertsOfUser(walletAddress: string) {
     const query = graphql(`
@@ -750,6 +768,12 @@ export function RecipientDashboardComponent() {
               >
                 <Coins className="mr-2 h-4 w-4" /> Get Donation Widget
               </Button>
+              <Button
+                onClick={() => setIsAllocationModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white ml-2"
+              >
+                Allocate Funds
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -789,6 +813,45 @@ export function RecipientDashboardComponent() {
               </Button>
               <Button
                 onClick={() => setIsWidgetDialogOpen(false)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          open={isAllocationModalOpen}
+          onOpenChange={setIsAllocationModalOpen}
+        >
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Allocate Funds</DialogTitle>
+              <DialogDescription>
+                Select a crypto address or ENS name to allocate funds.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              <ul className="space-y-2">
+                {cryptoAddresses.map((item, index) => (
+                  <li key={index} className="flex items-center">
+                    <input
+                      type="radio"
+                      name="allocationAddress"
+                      id={`address-${index}`}
+                      value={item.address}
+                      onChange={() => handleAllocateFunds(item.address)}
+                      className="mr-2"
+                    />
+                    <label htmlFor={`address-${index}`}>{item.address}</label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <DialogFooter>
+              <Button variant="outline">Allocate</Button>
+              <Button
+                onClick={() => setIsAllocationModalOpen(false)}
                 variant="outline"
               >
                 Close
