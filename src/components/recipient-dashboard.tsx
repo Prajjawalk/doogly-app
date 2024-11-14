@@ -24,58 +24,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
+import { getChains } from "@wagmi/core";
 import { useHypercertClient } from "@/hooks/useHypercertClient";
 import { TransferRestrictions, formatHypercertData } from "@hypercerts-org/sdk";
 import { graphql } from "@/lib/graphql";
 import request from "graphql-request";
-// Mock data for active campaigns
-const activeCampaigns = [
-  {
-    id: 1,
-    name: "Save the Forests",
-    description: "Help us plant 10,000 trees in the Amazon rainforest",
-    totalReceived: 1.5,
-    goal: 5,
-    chain: "Base",
-    address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    status: "Active",
-    contributors: 25,
-  },
-  {
-    id: 2,
-    name: "Clean Ocean Initiative",
-    description: "Removing plastic waste from the Pacific Ocean",
-    totalReceived: 0.8,
-    goal: 3,
-    chain: "Base",
-    address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    startDate: "2024-02-15",
-    endDate: "2024-08-15",
-    status: "Active",
-    contributors: 12,
-  },
-  {
-    id: 3,
-    name: "Education for All",
-    description: "Providing education to children in need",
-    totalReceived: 2.2,
-    goal: 4,
-    chain: "Base",
-    address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    startDate: "2024-03-01",
-    endDate: "2024-12-31",
-    status: "Active",
-    contributors: 30,
-  },
-];
 
 // Add this import at the top with other imports
 import Image from "next/image";
+import { config } from "@/wagmi";
 
 export function RecipientDashboardComponent() {
-  const walletAddress = useAccount().address;
+  const account = useAccount();
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [isWidgetDialogOpen, setIsWidgetDialogOpen] = useState(false);
   const [isCampaignDetailsOpen, setIsCampaignDetailsOpen] = useState(false);
@@ -85,6 +45,13 @@ export function RecipientDashboardComponent() {
   const [isSuccess, setIsSuccess] = useState(false);
   // Add new state variable for the allocation modal
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
+  const [campaigns, setCampaigns] = useState(null);
+  const [receivingChain, setReceivingChain] = useState("");
+  const [receiverAddress, setReceiverAddress] = useState(
+    account.address as string
+  );
+  const [alloPoolId, setAlloPoolId] = useState(0);
+  const [donationTitle, setDonationTitle] = useState("");
 
   // Sample data for crypto addresses and ENS names
   const cryptoAddresses = [
@@ -103,8 +70,40 @@ export function RecipientDashboardComponent() {
     // Add more addresses and ENS names as needed
   ];
 
+  function getChainParams(chain) {
+    const chains = {
+      ["optimism"]: {
+        chainId: "0xA",
+        chainName: "Optimism",
+        AxelarChainName: "optimism",
+        nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://mainnet.optimism.io"],
+        blockExplorerUrls: ["https://optimistic.etherscan.io"],
+        swapperBridgerContract: "0x8a4c14d50c43363a28647188534db7004112091c",
+      },
+      ["base"]: {
+        chainId: "0x2105",
+        chainName: "Base",
+        AxelarChainName: "base",
+        nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://mainnet.base.org"],
+        blockExplorerUrls: ["https://basescan.org"],
+        swapperBridgerContract: "0xeD99908D0697C408b26Ba35fE0800e565042c858",
+      },
+      ["celo"]: {
+        chainId: "0xA4EC",
+        chainName: "Celo",
+        AxelarChainName: "celo",
+        nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
+        rpcUrls: ["https://forno.celo.org"],
+        blockExplorerUrls: ["https://explorer.celo.org"],
+      },
+    };
+    return chains[chain];
+  }
+
   // Add this function to handle allocation logic
-  const handleAllocateFunds = (address) => {
+  const handleAllocateFunds = (address: string) => {
     console.log("Allocating funds to:", address);
     // Implement your allocation logic here
   };
@@ -116,11 +115,25 @@ export function RecipientDashboardComponent() {
           where: {fractions: {owner_address: {eq: "${walletAddress}"}}}
         ) {
           data {
+            contract {
+              chain_id
+            }
+            hypercert_id
             fractions {
+              count
               data {
                 metadata {
+                  id
                   name
+                  description
+                  external_url
+                  impact_scope
+                  impact_timeframe_from
+                  impact_timeframe_to
+                  work_timeframe_from
+                  work_timeframe_to
                 }
+                units
               }
             }
             units
@@ -133,22 +146,28 @@ export function RecipientDashboardComponent() {
       process.env.NEXT_PUBLIC_HYPERCERTS_API_URL_GRAPH,
       query
     );
+
+    res.hypercerts.data.map((d) => {
+      let totalUnits = 0;
+      d.fractions.data.map((i) => (totalUnits = totalUnits + Number(i.units)));
+      d["totalUnits"] = totalUnits;
+    });
+
     return res.hypercerts.data;
   }
 
-  const account = useAccount();
-
   const { client } = useHypercertClient();
 
-  const generateWidgetCode = (campaignId) => {
-    return `<button 
-    data-campaign-id="${campaignId}" 
-    class="crypto-donate-btn"
-    style="background-color: #8B5CF6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;"
-  >
-    Donate Crypto
-  </button>
-  <script src="https://your-donation-app-url.com/widget.js"></script>`;
+  const generateWidgetCode = () => {
+    return `<a  
+      href="https://app.doogly.com/donate/${
+        selectedCampaign?.hypercert_id.split("-")[2]
+      }"
+      class="crypto-donate-btn"
+      style="background-color: #8B5CF6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;"
+    >
+      Donate Crypto
+    </a>`;
   };
 
   const createCampaign = async () => {
@@ -230,11 +249,65 @@ export function RecipientDashboardComponent() {
     setCampaignForm((prev) => ({ ...prev, [id]: values }));
   };
 
+  const handleUpdateInfo = async () => {
+    const inputs = {
+      destinationAddress: getChainParams(receivingChain).swapperBridgerContract,
+      destinationChain: receivingChain,
+      splitsAddress: receiverAddress,
+      hypercertFractionId: selectedCampaign?.hypercert_id.split("-")[2],
+      modalTitle: donationTitle,
+      poolId: alloPoolId,
+    };
+
+    // Add the POST request to send the inputs to /api
+    const response = await fetch("/api", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(inputs),
+    });
+  };
+
   useEffect(() => {
     getHypercertsOfUser(account.address as string).then((total) => {
-      console.log("Total hypercerts:", total);
+      const filteredTotal = total.filter(
+        (t: any) => t.fractions.data[0].metadata != null
+      );
+      setCampaigns(filteredTotal);
     });
   }, [account.address]);
+
+  useEffect(() => {
+    const getDonationDetails = async () => {
+      try {
+        const response = await fetch(
+          `/api?id=${selectedCampaign?.hypercert_id.split("-")[2]}`
+        );
+        const data = await response.json();
+        setReceivingChain(data.destinationChain);
+        setReceiverAddress(data.splitsAddress);
+        setDonationTitle(data.modalTitle);
+        setAlloPoolId(data.poolId);
+      } catch (e) {
+        setReceiverAddress("");
+        setDonationTitle("");
+        setAlloPoolId(0);
+      }
+    };
+
+    if (selectedCampaign?.hypercert_id.split("-")[2]) {
+      getDonationDetails();
+    }
+  }, [selectedCampaign]);
+
+  const getChainNameById = (id: number) => {
+    const chains = getChains(config);
+
+    const chain = chains.find((chain) => chain.id === Number(id));
+
+    return chain ? chain.name : id;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-8">
@@ -261,7 +334,7 @@ export function RecipientDashboardComponent() {
           <div className="space-y-8">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-white">
-                Active Campaigns
+                Your Campaigns
               </h2>
               <Dialog>
                 <DialogTrigger asChild>
@@ -619,70 +692,84 @@ export function RecipientDashboardComponent() {
                 </DialogContent>
               </Dialog>
             </div>
+            {campaigns != null ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {campaigns.map((campaign) => (
+                  <Card
+                    key={campaign.fractions.data[0].metadata.id}
+                    className="bg-white bg-opacity-90 hover:bg-opacity-100 transition-all cursor-pointer"
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-purple-700">
+                        {campaign.fractions.data[0].metadata.name}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {campaign.fractions.data[0].metadata.description}
+                        </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {activeCampaigns.map((campaign) => (
-                <Card
-                  key={campaign.id}
-                  className="bg-white bg-opacity-90 hover:bg-opacity-100 transition-all cursor-pointer"
-                >
-                  <CardHeader>
-                    <CardTitle className="text-purple-700">
-                      {campaign.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {campaign.description}
-                      </p>
-
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-sm text-gray-500">Received</p>
-                          <p className="text-2xl font-bold text-green-600">
-                            {campaign.totalReceived} ETH
-                          </p>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm text-gray-500">Received</p>
+                            <p className="text-2xl font-bold text-green-600">
+                              {(
+                                (campaign.totalUnits -
+                                  campaign.fractions.data[0].units) /
+                                10 ** 6
+                              ).toFixed(3)}{" "}
+                              USD
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Goal</p>
+                            <p className="text-2xl font-bold text-blue-600">
+                              {campaign.totalUnits / 10 ** 6} USD
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Goal</p>
-                          <p className="text-2xl font-bold text-blue-600">
-                            {campaign.goal} ETH
-                          </p>
+
+                        <div className="mt-4 bg-gray-200 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full"
+                            style={{
+                              width: `${
+                                ((campaign.totalUnits -
+                                  campaign.fractions.data[0].units) /
+                                  campaign.totalUnits) *
+                                100
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>
+                            Chain:{" "}
+                            {getChainNameById(campaign.contract.chain_id)}
+                          </span>
+                          <span>
+                            {campaign.fractions.data.length - 1} Contributors
+                          </span>
                         </div>
                       </div>
-
-                      <div className="mt-4 bg-gray-200 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full"
-                          style={{
-                            width: `${
-                              (campaign.totalReceived / campaign.goal) * 100
-                            }%`,
-                          }}
-                        ></div>
-                      </div>
-
-                      <div className="flex justify-between text-sm text-gray-500">
-                        <span>Chain: {campaign.chain}</span>
-                        <span>{campaign.contributors} Contributors</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                      onClick={() => {
-                        setSelectedCampaign(campaign);
-                        setIsCampaignDetailsOpen(true);
-                      }}
-                    >
-                      View Details <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                        onClick={() => {
+                          setSelectedCampaign(campaign);
+                          setIsCampaignDetailsOpen(true);
+                        }}
+                      >
+                        View Details <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -695,44 +782,61 @@ export function RecipientDashboardComponent() {
         >
           <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
-              <DialogTitle>{selectedCampaign?.name}</DialogTitle>
+              <DialogTitle>
+                {selectedCampaign?.fractions.data[0].metadata.name}
+              </DialogTitle>
               <DialogDescription className="mt-2">
-                {selectedCampaign?.description}
+                {selectedCampaign?.fractions.data[0].metadata.description}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-bold">Received</Label>
                 <span className="col-span-3 text-green-600 font-semibold">
-                  {selectedCampaign?.totalReceived} ETH
+                  {(
+                    (selectedCampaign?.totalUnits -
+                      selectedCampaign?.fractions.data[0].units) /
+                    10 ** 6
+                  ).toFixed(3)}{" "}
+                  USD
                 </span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-bold">Goal</Label>
                 <span className="col-span-3 text-blue-600 font-semibold">
-                  {selectedCampaign?.goal} ETH
+                  {selectedCampaign?.totalUnits / 10 ** 6} USD
                 </span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-bold">Chain</Label>
-                <span className="col-span-3">{selectedCampaign?.chain}</span>
+                <span className="col-span-3">
+                  {getChainNameById(selectedCampaign?.contract.chain_id)}
+                </span>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              {/* <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-bold">Address</Label>
                 <code className="col-span-3 bg-gray-100 px-2 py-1 rounded text-sm">
                   {selectedCampaign?.address}
                 </code>
-              </div>
+              </div> */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-bold">Duration</Label>
                 <span className="col-span-3">
-                  {selectedCampaign?.startDate} to {selectedCampaign?.endDate}
+                  {new Date(
+                    selectedCampaign?.fractions.data[0].metadata
+                      .impact_timeframe_from * 1000
+                  ).toLocaleDateString()}{" "}
+                  to{" "}
+                  {new Date(
+                    selectedCampaign?.fractions.data[0].metadata
+                      .impact_timeframe_to * 1000
+                  ).toLocaleDateString()}
                 </span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-bold">Contributors</Label>
                 <span className="col-span-3">
-                  {selectedCampaign?.contributors}
+                  {selectedCampaign?.fractions.data.length - 1}
                 </span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -752,8 +856,9 @@ export function RecipientDashboardComponent() {
                   </div>
                   <p className="text-sm text-gray-500">
                     {Math.round(
-                      (selectedCampaign?.totalReceived /
-                        selectedCampaign?.goal) *
+                      ((selectedCampaign?.totalUnits -
+                        selectedCampaign?.fractions.data[0].units) /
+                        selectedCampaign?.totalUnits) *
                         100
                     )}
                     % of goal reached
@@ -768,12 +873,12 @@ export function RecipientDashboardComponent() {
               >
                 <Coins className="mr-2 h-4 w-4" /> Get Donation Widget
               </Button>
-              <Button
+              {/* <Button
                 onClick={() => setIsAllocationModalOpen(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white ml-2"
               >
                 Allocate Funds
-              </Button>
+              </Button> */}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -786,25 +891,97 @@ export function RecipientDashboardComponent() {
                 donation button.
               </DialogDescription>
             </DialogHeader>
+
+            {/* New input fields for allocation details */}
             <div className="mt-4">
-              <Label htmlFor="widget-code" className="sr-only">
-                Widget Code
-              </Label>
-              <pre className="p-4 bg-gray-100 rounded-md overflow-x-auto max-w-[450px] mx-auto">
-                <code
-                  id="widget-code"
-                  className="text-sm whitespace-pre-wrap break-all"
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="destinationChain" className="text-right">
+                    Receiving Chain
+                  </Label>
+                  <select
+                    id="destinationChain"
+                    className="col-span-3"
+                    placeholder="Select destination chain"
+                    onChange={(e) => setReceivingChain(e.target.value)}
+                    defaultValue={receivingChain}
+                  >
+                    <option value="">Select a chain</option>
+                    <option value="optimism">Optimism</option>
+                    <option value="base">Base</option>
+                    <option value="celo">Celo</option>
+                    <option value="arbitrum">Arbitrum</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="receiverAddress" className="text-right">
+                    Receiver Address
+                  </Label>
+                  <Input
+                    id="receiverAddress"
+                    className="col-span-3"
+                    placeholder="Enter receiver address"
+                    defaultValue={receiverAddress}
+                    onChange={(e) => setReceiverAddress(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="allocationPoolId" className="text-right">
+                    Allo Pool ID (optional)
+                  </Label>
+                  <Input
+                    id="allocationPoolId"
+                    className="col-span-3"
+                    placeholder="Enter allocation pool ID"
+                    type="number"
+                    onChange={(e) => setAlloPoolId(parseInt(e.target.value))}
+                    defaultValue={alloPoolId}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="donationTitle" className="text-right">
+                    Title
+                  </Label>
+                  <Input
+                    id="donationTitle"
+                    className="col-span-3"
+                    placeholder="Enter title"
+                    onChange={(e) => setDonationTitle(e.target.value)}
+                    defaultValue={donationTitle}
+                  />
+                </div>
+                <Button
+                  onClick={() => handleUpdateInfo()}
+                  className="bg-green-500 hover:bg-green-600 text-white"
                 >
-                  {generateWidgetCode(selectedCampaign?.id)}
-                </code>
-              </pre>
+                  Update Info
+                </Button>
+              </div>
             </div>
+
+            {receiverAddress ? (
+              <div className="mt-4">
+                <Label htmlFor="widget-code" className="sr-only">
+                  Widget Code
+                </Label>
+                <pre className="p-4 bg-gray-100 rounded-md overflow-x-auto max-w-[450px] mx-auto">
+                  <code
+                    id="widget-code"
+                    className="text-sm whitespace-pre-wrap break-all"
+                  >
+                    {generateWidgetCode()}
+                  </code>
+                </pre>
+              </div>
+            ) : (
+              <div className="mt-4">
+                Please fill the above details to view the widget
+              </div>
+            )}
             <DialogFooter className="mt-6">
               <Button
                 onClick={() => {
-                  navigator.clipboard.writeText(
-                    generateWidgetCode(selectedCampaign?.id)
-                  );
+                  navigator.clipboard.writeText(generateWidgetCode());
                   // You might want to add a toast notification here
                 }}
                 className="bg-green-500 hover:bg-green-600 text-white"
