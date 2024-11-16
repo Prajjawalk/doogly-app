@@ -159,15 +159,20 @@ export function RecipientDashboardComponent() {
   const { client } = useHypercertClient();
 
   const generateWidgetCode = () => {
-    return `<a  
-      href="https://app.doogly.com/donate/${
-        selectedCampaign?.hypercert_id.split("-")[2]
-      }"
-      class="crypto-donate-btn"
-      style="background-color: #8B5CF6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;"
-    >
-      Donate Crypto
-    </a>`;
+    return `<DooglyDonateButton
+    buttonText="Donate Now"
+    modalTitle="${donationTitle}"
+    config={{
+      destinationChain: "${receivingChain}",
+      destinationAddress: "${
+        getChainParams(receivingChain)?.swapperBridgerContract
+      }",
+      splitsAddress: "${receiverAddress}",
+      hypercertFractionId: "${selectedCampaign?.hypercert_id.split("-")[2]}",
+      poolId: ${alloPoolId},
+    }}
+    buttonClassName="<YOUR-DONATE-BUTTON-CSS>"
+  />`;
   };
 
   const createCampaign = async () => {
@@ -960,18 +965,33 @@ export function RecipientDashboardComponent() {
             </div>
 
             {receiverAddress ? (
-              <div className="mt-4">
-                <Label htmlFor="widget-code" className="sr-only">
-                  Widget Code
-                </Label>
-                <pre className="p-4 bg-gray-100 rounded-md overflow-x-auto max-w-[450px] mx-auto">
-                  <code
-                    id="widget-code"
-                    className="text-sm whitespace-pre-wrap break-all"
-                  >
-                    {generateWidgetCode()}
-                  </code>
-                </pre>
+              <div>
+                <div className="mt-4">
+                  <Label htmlFor="widget-code" className="sr-only">
+                    Widget Code
+                  </Label>
+                  <pre className="p-4 bg-gray-100 rounded-md overflow-x-auto max-w-[450px] mx-auto">
+                    <code
+                      id="widget-code"
+                      className="text-sm whitespace-pre-wrap break-all"
+                    >
+                      npm i @doogly/doogly-donate-component
+                    </code>
+                  </pre>
+                </div>
+                <div className="mt-4">
+                  <Label htmlFor="widget-code" className="sr-only">
+                    Widget Code
+                  </Label>
+                  <pre className="p-4 bg-gray-100 rounded-md overflow-x-auto max-w-[450px] mx-auto">
+                    <code
+                      id="widget-code"
+                      className="text-sm whitespace-pre-wrap break-all"
+                    >
+                      {generateWidgetCode()}
+                    </code>
+                  </pre>
+                </div>
               </div>
             ) : (
               <div className="mt-4">
