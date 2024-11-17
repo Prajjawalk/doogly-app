@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wallet, Plus, ChevronRight, Coins, Loader2 } from "lucide-react";
+import { Plus, ChevronRight, Coins, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from "@/components/ui/card";
 import {
@@ -23,7 +22,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
+import {
+  useAccount,
+  usePublicClient,
+  useReadContract,
+  useWalletClient,
+  useWriteContract,
+} from "wagmi";
 import { getChains } from "@wagmi/core";
 import { useHypercertClient } from "@/hooks/useHypercertClient";
 import { TransferRestrictions, formatHypercertData } from "@hypercerts-org/sdk";
@@ -33,6 +38,7 @@ import request from "graphql-request";
 // Add this import at the top with other imports
 import Image from "next/image";
 import { config } from "@/wagmi";
+import { createPublicClient, getContract, http, PublicClient } from "viem";
 
 export function RecipientDashboardComponent() {
   const account = useAccount();
@@ -52,6 +58,8 @@ export function RecipientDashboardComponent() {
   );
   const [alloPoolId, setAlloPoolId] = useState(0);
   const [donationTitle, setDonationTitle] = useState("");
+  const [hcApproved, setHcApproved] = useState(false);
+  const hyperminterWrite = useWriteContract();
 
   // Sample data for crypto addresses and ENS names
   const cryptoAddresses = [
@@ -70,7 +78,30 @@ export function RecipientDashboardComponent() {
     // Add more addresses and ENS names as needed
   ];
 
-  function getChainParams(chain) {
+  const hyperMinterABI = [
+    {
+      inputs: [
+        { internalType: "address", name: "account", type: "address" },
+        { internalType: "address", name: "operator", type: "address" },
+      ],
+      name: "isApprovedForAll",
+      outputs: [{ internalType: "bool", name: "", type: "bool" }],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [
+        { internalType: "address", name: "operator", type: "address" },
+        { internalType: "bool", name: "approved", type: "bool" },
+      ],
+      name: "setApprovalForAll",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ];
+
+  function getChainParams(chain: string) {
     const chains = {
       ["optimism"]: {
         chainId: "0xA",
@@ -80,6 +111,7 @@ export function RecipientDashboardComponent() {
         rpcUrls: ["https://mainnet.optimism.io"],
         blockExplorerUrls: ["https://optimistic.etherscan.io"],
         swapperBridgerContract: "0x8a4c14d50c43363a28647188534db7004112091c",
+        hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
       ["base"]: {
         chainId: "0x2105",
@@ -89,6 +121,7 @@ export function RecipientDashboardComponent() {
         rpcUrls: ["https://mainnet.base.org"],
         blockExplorerUrls: ["https://basescan.org"],
         swapperBridgerContract: "0xeD99908D0697C408b26Ba35fE0800e565042c858",
+        hyperMinter: "0xC2d179166bc9dbB00A03686a5b17eCe2224c2704",
       },
       ["celo"]: {
         chainId: "0xA4EC",
@@ -97,6 +130,8 @@ export function RecipientDashboardComponent() {
         nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
         rpcUrls: ["https://forno.celo.org"],
         blockExplorerUrls: ["https://explorer.celo.org"],
+        swapperBridgerContract: "0x73f9febd723ebcaa23a6ded587afbf2a503b303f",
+        hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
       },
     };
     return chains[chain];
@@ -274,6 +309,43 @@ export function RecipientDashboardComponent() {
     });
   };
 
+  const publicClient = usePublicClient({
+    chainId: account.chainId,
+  });
+
+  const chainContracts: Record<number, any> = {
+    10: {
+      chainId: "0xA",
+      chainName: "Optimism",
+      AxelarChainName: "optimism",
+      nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+      rpcUrls: ["https://mainnet.optimism.io"],
+      blockExplorerUrls: ["https://optimistic.etherscan.io"],
+      swapperBridgerContract: "0x8a4c14d50c43363a28647188534db7004112091c",
+      hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
+    },
+    8453: {
+      chainId: "0x2105",
+      chainName: "Base",
+      AxelarChainName: "base",
+      nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+      rpcUrls: ["https://mainnet.base.org"],
+      blockExplorerUrls: ["https://basescan.org"],
+      swapperBridgerContract: "0xeD99908D0697C408b26Ba35fE0800e565042c858",
+      hyperMinter: "0xC2d179166bc9dbB00A03686a5b17eCe2224c2704",
+    },
+    42220: {
+      chainId: "0xA4EC",
+      chainName: "Celo",
+      AxelarChainName: "celo",
+      nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
+      rpcUrls: ["https://forno.celo.org"],
+      blockExplorerUrls: ["https://explorer.celo.org"],
+      swapperBridgerContract: "0x73f9febd723ebcaa23a6ded587afbf2a503b303f",
+      hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
+    },
+  };
+
   useEffect(() => {
     getHypercertsOfUser(account.address as string).then((total) => {
       const filteredTotal = total.filter(
@@ -281,7 +353,28 @@ export function RecipientDashboardComponent() {
       );
       setCampaigns(filteredTotal);
     });
-  }, [account.address]);
+
+    const checkApproved = async () => {
+      if (account.chainId) {
+        const hyperMinterContract = getContract({
+          address: chainContracts[account.chainId].hyperMinter,
+          abi: hyperMinterABI,
+          client: {
+            public: publicClient as PublicClient,
+          },
+        });
+
+        const isApproved = await hyperMinterContract.read.isApprovedForAll([
+          account.address,
+          chainContracts[account.chainId].swapperBridgerContract,
+        ]);
+
+        setHcApproved(isApproved as boolean);
+      }
+    };
+
+    checkApproved();
+  }, [account, receivingChain]);
 
   useEffect(() => {
     const getDonationDetails = async () => {
@@ -314,6 +407,18 @@ export function RecipientDashboardComponent() {
     return chain ? chain.name : id;
   };
 
+  const approveHcTransfer = async () => {
+    await hyperminterWrite.writeContractAsync({
+      abi: hyperMinterABI,
+      address: chainContracts[account.chainId ?? 10].hyperMinter,
+      functionName: "setApprovalForAll",
+      args: [
+        chainContracts[account.chainId ?? 10].swapperBridgerContract,
+        true,
+      ],
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-8">
       <div className="max-w-4xl mx-auto">
@@ -334,13 +439,23 @@ export function RecipientDashboardComponent() {
         </h1>
 
         {!account.isConnected ? (
-          <ConnectButton />
+          <>
+            <ConnectButton />
+          </>
         ) : (
           <div className="space-y-8">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-white">
                 Your Campaigns
               </h2>
+              {!hcApproved ? (
+                <Button
+                  onClick={() => approveHcTransfer()}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Approve Hypercert Transfer
+                </Button>
+              ) : null}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="bg-green-500 hover:bg-green-600 text-white">

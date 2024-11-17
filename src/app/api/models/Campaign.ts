@@ -26,7 +26,7 @@ const CampaignSchema: Schema = new Schema(
 );
 
 // Create the Campaign model
-const createCampaignModel = (mongooseInstance) => {
+const createCampaignModel = (mongooseInstance: typeof mongoose) => {
   return (
     mongooseInstance.models.Campaign ||
     mongooseInstance.model("Campaign", CampaignSchema)
