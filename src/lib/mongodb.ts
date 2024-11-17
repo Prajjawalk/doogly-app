@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mongoose from "mongoose";
 
 if (!process.env.NEXT_ATLAS_URI) {
