@@ -21,8 +21,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [uniswapTokens, setUniswapTokens] = useState({});
   const [initialized, setInitialized] = useState(false);
   const [walletAddressInput, setWalletAddressInput] = useState(account.address);
-  const [config, setConfig] = useState({});
-  const id = params.id;
+  const [config, setConfig] = useState();
 
   // const config = {
   //   destinationChain: "optimism",
@@ -36,6 +35,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   useEffect(() => {
     const initialize = async () => {
       // Fetch data from /api route with id as query param
+      const id = (await params).id;
       const response = await fetch(`/api?id=${id}`);
       const data = await response.json();
       data.hypercertFractionId = BigInt(data.hypercertFractionId) + BigInt(1);
