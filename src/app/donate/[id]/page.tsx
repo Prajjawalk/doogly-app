@@ -607,7 +607,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         id="crypto-donate-modal-title"
         className="text-purple-600 text-xl font-bold mb-4"
       >
-        {config.modalTitle || "Make a Donation"}
+        {config?.modalTitle ?? "Make a Donation"}
       </h2>
       {account.isConnected ? (
         <div>
