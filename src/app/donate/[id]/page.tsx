@@ -515,6 +515,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         name: "Ethereum",
         address: "0x0000000000000000000000000000000000000000",
       },
+      42220: {
+        symbol: "CELO",
+        name: "Celo",
+        address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
+      },
+      42161: {
+        symbol: "ETH",
+        name: "Ethereum",
+        address: "0x0000000000000000000000000000000000000000",
+      },
     };
     return (
       nativeTokens[chainId] || {
@@ -529,6 +539,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     const apiUrls = {
       10: "https://api-optimistic.etherscan.io/api",
       8453: "https://api.basescan.org/api",
+      42161: "https://api.arbiscan.io/api",
+      42220: "https://api.celoscan.io/api",
     };
     return apiUrls[chainId];
   }
@@ -538,6 +550,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       10: "9HBFD3UFSTQV71132ZASZ4T6M6Y1VHDGKM",
       8453: "X4R5GNYKKD34HKQGEVC6SXGHI62EGUYNJ8",
       42220: "4MY7GCBJXMB181R771BY5HRSCAQN2PXTUN",
+      42161: "VU2ZRHTKI2HFMEBAVXV5WSN9KZRGEB8841",
     };
     return apiKeys[chainId];
   }
@@ -552,6 +565,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         rpcUrls: ["https://mainnet.optimism.io"],
         blockExplorerUrls: ["https://optimistic.etherscan.io"],
         swapperBridgerContract: "0x8a4c14d50c43363a28647188534db7004112091c",
+        hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
       8453: {
         chainId: "0x2105",
@@ -561,6 +575,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         rpcUrls: ["https://mainnet.base.org"],
         blockExplorerUrls: ["https://basescan.org"],
         swapperBridgerContract: "0xeD99908D0697C408b26Ba35fE0800e565042c858",
+        hyperMinter: "0xC2d179166bc9dbB00A03686a5b17eCe2224c2704",
       },
       42220: {
         chainId: "0xA4EC",
@@ -569,6 +584,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
         rpcUrls: ["https://forno.celo.org"],
         blockExplorerUrls: ["https://explorer.celo.org"],
+        swapperBridgerContract: "0x1e1461464852d6fbf8a19097d14408d657d49457",
+        hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
+      },
+      42161: {
+        chainId: "0xa4b1",
+        chainName: "Arbitrum",
+        AxelarChainName: "arbitrum",
+        nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+        blockExplorerUrls: ["https://arbiscan.io"],
+        swapperBridgerContract: "0x51d952a5a93e73096b9b6f807ec37aa7a2fc52da",
+        hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
     };
     return chains[chainId];

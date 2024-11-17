@@ -1,14 +1,6 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { fallback, http, unstable_connector } from "wagmi";
-import {
-  arbitrum,
-  base,
-  celo,
-  mainnet,
-  optimism,
-  polygon,
-  sepolia,
-} from "wagmi/chains";
+import { arbitrum, base, celo, optimism, sepolia } from "wagmi/chains";
 import { injected, walletConnect } from "wagmi/connectors";
 
 export const config = getDefaultConfig({
@@ -17,14 +9,11 @@ export const config = getDefaultConfig({
   chains: [
     optimism,
     base,
+    celo,
+    arbitrum,
     ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === "true" ? [sepolia] : []),
   ],
   transports: {
-    [mainnet.id]: fallback([
-      unstable_connector(injected),
-      unstable_connector(walletConnect),
-      http(),
-    ]),
     [optimism.id]: fallback([
       unstable_connector(injected),
       unstable_connector(walletConnect),
@@ -36,11 +25,6 @@ export const config = getDefaultConfig({
       http(),
     ]),
     [celo.id]: fallback([
-      unstable_connector(injected),
-      unstable_connector(walletConnect),
-      http(),
-    ]),
-    [polygon.id]: fallback([
       unstable_connector(injected),
       unstable_connector(walletConnect),
       http(),

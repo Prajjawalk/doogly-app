@@ -131,8 +131,18 @@ export function RecipientDashboardComponent() {
         nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
         rpcUrls: ["https://forno.celo.org"],
         blockExplorerUrls: ["https://explorer.celo.org"],
-        swapperBridgerContract: "0x73f9febd723ebcaa23a6ded587afbf2a503b303f",
+        swapperBridgerContract: "0x1e1461464852d6fbf8a19097d14408d657d49457",
         hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
+      },
+      ["arbitrum"]: {
+        chainId: "0xa4b1",
+        chainName: "Arbitrum",
+        AxelarChainName: "arbitrum",
+        nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+        blockExplorerUrls: ["https://arbiscan.io"],
+        swapperBridgerContract: "0x51d952a5a93e73096b9b6f807ec37aa7a2fc52da",
+        hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
     };
     return chains[chain];
@@ -342,8 +352,18 @@ export function RecipientDashboardComponent() {
       nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
       rpcUrls: ["https://forno.celo.org"],
       blockExplorerUrls: ["https://explorer.celo.org"],
-      swapperBridgerContract: "0x73f9febd723ebcaa23a6ded587afbf2a503b303f",
+      swapperBridgerContract: "0x1e1461464852d6fbf8a19097d14408d657d49457",
       hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
+    },
+    42161: {
+      chainId: "0xa4b1",
+      chainName: "Arbitrum",
+      AxelarChainName: "arbitrum",
+      nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+      rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+      blockExplorerUrls: ["https://arbiscan.io"],
+      swapperBridgerContract: "0x51d952a5a93e73096b9b6f807ec37aa7a2fc52da",
+      hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
     },
   };
 
@@ -441,7 +461,9 @@ export function RecipientDashboardComponent() {
 
         {!account.isConnected ? (
           <>
-            <ConnectButton />
+            <div className="text-xl font-semibold text-white">
+              Please Connect Wallet to Proceed
+            </div>
           </>
         ) : (
           <div className="space-y-8">
