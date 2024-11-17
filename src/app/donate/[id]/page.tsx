@@ -647,13 +647,22 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             >
               Select Token
             </label>
-            <select
-              id="crypto-donate-token"
-              className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-              onChange={updateInputTokenAddress}
-            >
-              {tokenSelectHtml}
-            </select>
+            {Object.entries(uniswapTokens).length > 0 ? (
+              <select
+                className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 focus:border-purple-500 focus:ring-purple-500"
+                onChange={(e) => updateInputTokenAddress(e.target.value)}
+              >
+                {Object.entries(uniswapTokens).map(([symbol, token]) => (
+                  <option key={symbol} value={symbol}>
+                    {token.name} ({symbol})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm font-medium text-gray-700">
+                loading...
+              </div>
+            )}
           </div>
           <div className="mb-4">
             <label
