@@ -23,6 +23,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [initialized, setInitialized] = useState(false);
   const [walletAddressInput, setWalletAddressInput] = useState(account.address);
   const [config, setConfig] = useState();
+  const [donationAmount, setDonationAmount] = useState("0");
+  const [submitButtonText, setSubmitButtonText] = useState("Donate");
+  const [submitButtonDisabled, setSubmitButtonDisabled] = useState(false);
+  const [selectedToken, setSelectedToken] = useState("");
 
   // const config = {
   //   destinationChain: "optimism",
@@ -251,19 +255,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     },
   });
 
-  const donationAmountInput = document.getElementById("crypto-donate-amount");
-  const submitButton = document.getElementById("crypto-donate-submit");
-  const tokenSelect = document.getElementById("crypto-donate-token");
-
-  function updateInputTokenAddress() {
-    const selectedToken = tokenSelect.value;
-    config.inputTokenAddress =
-      uniswapTokens[selectedToken]?.address || config.inputTokenAddress;
+  function updateInputTokenAddress(val) {
+    setSelectedToken(val);
   }
 
-  const chainSelectEl = document.getElementById("crypto-donate-chain");
-  const chainSelect = async () => {
-    const newChainId = parseInt(chainSelectEl.value);
+  const chainSelect = async (newChainId: number) => {
     if (newChainId !== account.chainId) {
       try {
         console.log(newChainId);
@@ -283,21 +279,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         }
       } catch (error) {
         console.error("Failed to switch chain:", error);
-        chainSelectEl.value = account.chainId;
       }
     }
   };
 
   async function submitDonation() {
-    const amount = donationAmountInput.value;
+    const amount = donationAmount;
     if (!amount) return;
 
-    const tokenSelect = document.getElementById("crypto-donate-token");
-    const selectedToken = tokenSelect.value;
     const inputTokenAddress = uniswapTokens[selectedToken].address;
 
-    submitButton.disabled = true;
-    submitButton.textContent = "Processing...";
+    setSubmitButtonDisabled(true);
+    setSubmitButtonText("Processing...");
 
     try {
       if (selectedToken === "native") {
@@ -374,13 +367,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
       if (sendDonation.isSuccess) {
         alert("Donation successful!");
+        setSubmitButtonText("Donation Successful!");
       }
     } catch (error) {
       console.error("Donation failed:", error);
       alert("Donation failed. Please try again.");
     } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = "Donate";
+      setSubmitButtonDisabled(false);
+      setSubmitButtonText("Donate");
     }
   }
 
@@ -641,7 +635,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             <select
               id="crypto-donate-chain"
               className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-              onChange={chainSelect}
+              onChange={(e) => chainSelect(parseInt(e.target.value))}
             >
               {chainSelectHtml}
             </select>
@@ -670,18 +664,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </label>
             <input
               id="crypto-donate-amount"
-              type="number"
-              step="0.01"
               placeholder="Enter amount"
               className="w-full p-2 border border-gray-300 rounded"
+              onChange={(e) => setDonationAmount(e.target.value)}
             />
           </div>
           <button
             id="crypto-donate-submit"
             className="bg-purple-600 text-white border-none py-2 px-4 text-center text-lg rounded transition duration-300 ease-in-out hover:bg-purple-700"
             onClick={submitDonation}
+            disabled={submitButtonDisabled}
           >
-            Donate
+            {submitButtonText}
           </button>
         </div>
       ) : (
