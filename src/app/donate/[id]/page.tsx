@@ -419,7 +419,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               symbol: token.symbol,
               name: token.name,
               address: token.address,
-              decimals: token.decimals,
+              decimals: parseInt(token.decimals),
             };
           }
         } catch (error) {
