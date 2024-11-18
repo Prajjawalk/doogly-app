@@ -372,7 +372,11 @@ export function RecipientDashboardComponent() {
       const filteredTotal = total.filter(
         (t: any) => t.fractions.data[0].metadata != null
       );
-      setCampaigns(filteredTotal);
+      const uniqueHypercerts = new Map();
+      filteredTotal.forEach((item) => {
+        uniqueHypercerts.set(item.hypercert_id, item);
+      });
+      setCampaigns(Array.from(uniqueHypercerts.values()));
     });
 
     const checkApproved = async () => {
