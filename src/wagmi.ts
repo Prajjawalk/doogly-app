@@ -1,18 +1,41 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { fallback, http, unstable_connector } from "wagmi";
 import { arbitrum, base, celo, optimism, sepolia } from "wagmi/chains";
 import { injected, walletConnect } from "wagmi/connectors";
+import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import { createConfig } from "wagmi";
+import {
+  coinbaseWallet,
+  metaMaskWallet,
+  rainbowWallet,
+  walletConnectWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 
-export const config = getDefaultConfig({
-  appName: "Doogly App",
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID as string,
-  chains: [
-    optimism,
-    base,
-    celo,
-    arbitrum,
-    ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === "true" ? [sepolia] : []),
+coinbaseWallet.preference = "all";
+
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: "Recommended",
+      wallets: [metaMaskWallet],
+    },
+    {
+      groupName: "Popular",
+      wallets: [rainbowWallet, coinbaseWallet],
+    },
+    {
+      groupName: "Wallet Connect",
+      wallets: [walletConnectWallet],
+    },
   ],
+  {
+    appName: "Your App Name",
+    projectId: "<YOUR WALLETCONNECT PROJECT ID>",
+  }
+);
+
+export const config = createConfig({
+  connectors,
+  chains: [optimism, base, celo, arbitrum],
   transports: {
     [optimism.id]: fallback([
       unstable_connector(injected),
