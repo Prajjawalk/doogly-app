@@ -233,10 +233,11 @@ export function RecipientDashboardComponent() {
         excludedImpactScope: campaignForm.excludedImpactScope as string[],
         workScope: campaignForm.workScope as string[],
         excludedWorkScope: campaignForm.excludedWorkScope as string[],
-        workTimeframeStart: campaignForm.workTimeframeStart.getTime(),
-        workTimeframeEnd: campaignForm.workTimeframeEnd.getTime(),
-        impactTimeframeStart: campaignForm.impactTimeframeStart.getTime(),
-        impactTimeframeEnd: campaignForm.impactTimeframeEnd.getTime(),
+        workTimeframeStart: campaignForm.workTimeframeStart.getTime() / 1000,
+        workTimeframeEnd: campaignForm.workTimeframeEnd.getTime() / 1000,
+        impactTimeframeStart:
+          campaignForm.impactTimeframeStart.getTime() / 1000,
+        impactTimeframeEnd: campaignForm.impactTimeframeEnd.getTime() / 1000,
         contributors: [account.address as string, ...campaignForm.contributors],
         rights: [...campaignForm.rights],
         excludedRights: [...campaignForm.excludedRights],
@@ -247,7 +248,7 @@ export function RecipientDashboardComponent() {
       }
       const txId = await client.mintHypercert({
         metaData: metadata.data,
-        totalUnits: BigInt(campaignForm.goal),
+        totalUnits: BigInt(campaignForm.goal) * 10n ** 6n,
         transferRestriction: TransferRestrictions.FromCreatorOnly,
       });
       // Set the transaction ID and success state
@@ -536,7 +537,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="name"
                               className="col-span-3"
-                              value={campaignForm.name}
+                              // value={campaignForm.name}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -547,19 +548,19 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="description"
                               className="col-span-3"
-                              value={campaignForm.description}
+                              // value={campaignForm.description}
                               onChange={handleInputChange}
                             />
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="goal" className="text-right">
-                              Goal
+                              Goal (USD)
                             </Label>
                             <Input
                               id="goal"
                               type="number"
                               className="col-span-3"
-                              value={campaignForm.goal}
+                              // value={campaignForm.goal}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -570,7 +571,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="address"
                               className="col-span-3"
-                              value={campaignForm.address}
+                              // value={campaignForm.address}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -581,7 +582,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="image"
                               className="col-span-3"
-                              value={campaignForm.image}
+                              // value={campaignForm.image}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -592,7 +593,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="impactScope"
                               className="col-span-3"
-                              value={campaignForm.impactScope.join(", ")}
+                              // value={campaignForm.impactScope}
                               onChange={(e) =>
                                 handleMultiInputChange(
                                   "impactScope",
@@ -613,9 +614,9 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="excludedImpactScope"
                               className="col-span-3"
-                              value={campaignForm.excludedImpactScope.join(
-                                ", "
-                              )}
+                              // value={campaignForm.excludedImpactScope.join(
+                              //   ", "
+                              // )}
                               onChange={(e) =>
                                 handleMultiInputChange(
                                   "excludedImpactScope",
@@ -633,7 +634,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="workScope"
                               className="col-span-3"
-                              value={campaignForm.workScope.join(", ")}
+                              // value={campaignForm.workScope.join(", ")}
                               onChange={(e) =>
                                 handleMultiInputChange(
                                   "workScope",
@@ -654,7 +655,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="excludedWorkScope"
                               className="col-span-3"
-                              value={campaignForm.excludedWorkScope.join(", ")}
+                              // value={campaignForm.excludedWorkScope.join(", ")}
                               onChange={(e) =>
                                 handleMultiInputChange(
                                   "excludedWorkScope",
@@ -676,11 +677,11 @@ export function RecipientDashboardComponent() {
                               id="workTimeframeStart"
                               type="date"
                               className="col-span-3"
-                              value={
-                                campaignForm.workTimeframeStart
-                                  .toISOString()
-                                  .split("T")[0]
-                              }
+                              // value={
+                              //   campaignForm.workTimeframeStart
+                              //     .toISOString()
+                              //     .split("T")[0]
+                              // }
                               onChange={(e) =>
                                 handleDateChange(
                                   "workTimeframeStart",
@@ -701,11 +702,11 @@ export function RecipientDashboardComponent() {
                               id="workTimeframeEnd"
                               type="date"
                               className="col-span-3"
-                              value={
-                                campaignForm.workTimeframeEnd
-                                  .toISOString()
-                                  .split("T")[0]
-                              }
+                              // value={
+                              //   campaignForm.workTimeframeEnd
+                              //     .toISOString()
+                              //     .split("T")[0]
+                              // }
                               onChange={(e) =>
                                 handleDateChange(
                                   "workTimeframeEnd",
@@ -726,11 +727,11 @@ export function RecipientDashboardComponent() {
                               id="impactTimeframeStart"
                               type="date"
                               className="col-span-3"
-                              value={
-                                campaignForm.impactTimeframeStart
-                                  .toISOString()
-                                  .split("T")[0]
-                              }
+                              // value={
+                              //   campaignForm.impactTimeframeStart
+                              //     .toISOString()
+                              //     .split("T")[0]
+                              // }
                               onChange={(e) =>
                                 handleDateChange(
                                   "impactTimeframeStart",
@@ -751,11 +752,11 @@ export function RecipientDashboardComponent() {
                               id="impactTimeframeEnd"
                               type="date"
                               className="col-span-3"
-                              value={
-                                campaignForm.impactTimeframeEnd
-                                  .toISOString()
-                                  .split("T")[0]
-                              }
+                              // value={
+                              //   campaignForm.impactTimeframeEnd
+                              //     .toISOString()
+                              //     .split("T")[0]
+                              // }
                               onChange={(e) =>
                                 handleDateChange(
                                   "impactTimeframeEnd",
@@ -774,7 +775,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="contributors"
                               className="col-span-3"
-                              value={campaignForm.contributors.join(", ")}
+                              // value={campaignForm.contributors.join(", ")}
                               onChange={(e) =>
                                 handleMultiInputChange(
                                   "contributors",
@@ -792,7 +793,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="rights"
                               className="col-span-3"
-                              value={campaignForm.rights.join(", ")}
+                              // value={campaignForm.rights.join(", ")}
                               onChange={(e) =>
                                 handleMultiInputChange("rights", e.target.value)
                               }
@@ -810,7 +811,7 @@ export function RecipientDashboardComponent() {
                             <Input
                               id="excludedRights"
                               className="col-span-3"
-                              value={campaignForm.excludedRights.join(", ")}
+                              // value={campaignForm.excludedRights.join(", ")}
                               onChange={(e) =>
                                 handleMultiInputChange(
                                   "excludedRights",
