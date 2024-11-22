@@ -29,7 +29,7 @@ const connectors = connectorsForWallets(
   ],
   {
     appName: "Your App Name",
-    projectId: "<YOUR WALLETCONNECT PROJECT ID>",
+    projectId: process.env.NEXT_PUBLIC_PROJECT_ID as string,
   }
 );
 
