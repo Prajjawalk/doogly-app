@@ -61,6 +61,9 @@ export function RecipientDashboardComponent() {
   const [donationTitle, setDonationTitle] = useState("");
   const [hcApproved, setHcApproved] = useState(false);
   const hyperminterWrite = useWriteContract();
+  const [backgroundColor, setBackgroundColor] = useState("white");
+  const [headingColor, setHeadingColor] = useState("#892BE2");
+  const [buttonColor, setButtonColor] = useState("#8A2BE2");
 
   // Sample data for crypto addresses and ENS names
   const cryptoAddresses = [
@@ -309,6 +312,9 @@ export function RecipientDashboardComponent() {
       hypercertFractionId: selectedCampaign?.hypercert_id.split("-")[2],
       modalTitle: donationTitle,
       poolId: alloPoolId,
+      backgroundColor: backgroundColor,
+      headingColor: headingColor,
+      buttonColor: buttonColor,
     };
 
     // Add the POST request to send the inputs to /api
@@ -1096,6 +1102,42 @@ export function RecipientDashboardComponent() {
                     placeholder="Enter title"
                     onChange={(e) => setDonationTitle(e.target.value)}
                     defaultValue={donationTitle}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="backgroundColor" className="text-right">
+                    Background Color
+                  </Label>
+                  <Input
+                    id="backgroundColor"
+                    className="col-span-3"
+                    placeholder="Enter background color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="headingColor" className="text-right">
+                    Heading Color
+                  </Label>
+                  <Input
+                    id="headingColor"
+                    className="col-span-3"
+                    placeholder="Enter heading color"
+                    value={headingColor}
+                    onChange={(e) => setHeadingColor(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="buttonColor" className="text-right">
+                    Button Color
+                  </Label>
+                  <Input
+                    id="buttonColor"
+                    className="col-span-3"
+                    placeholder="Enter button color"
+                    value={buttonColor}
+                    onChange={(e) => setButtonColor(e.target.value)}
                   />
                 </div>
                 <Button

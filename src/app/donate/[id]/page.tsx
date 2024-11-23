@@ -596,10 +596,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <div className="bg-white mx-auto my-10 p-5 rounded-lg w-4/5 max-w-md">
+    <div
+      className="mx-auto my-10 p-5 rounded-lg w-4/5 max-w-md"
+      style={{ backgroundColor: config?.backgroundColor || "white" }}
+    >
       <h2
         id="crypto-donate-modal-title"
-        className="text-purple-600 text-xl font-bold mb-4"
+        className="text-xl font-bold mb-4"
+        style={{ color: config?.headingColor || "#892BE2" }}
       >
         {config?.modalTitle ?? "Make a Donation"}
       </h2>
@@ -680,7 +684,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
           <button
             id="crypto-donate-submit"
-            className="bg-purple-600 text-white border-none py-2 px-4 text-center text-lg rounded transition duration-300 ease-in-out hover:bg-purple-700"
+            className="text-white border-none py-2 px-4 text-center text-lg rounded transition duration-300 ease-in-out"
+            style={{ backgroundColor: config?.buttonColor || "#8A2BE2" }}
             onClick={submitDonation}
             disabled={submitButtonDisabled}
           >
