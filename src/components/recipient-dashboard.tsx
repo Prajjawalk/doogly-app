@@ -64,6 +64,7 @@ export function RecipientDashboardComponent() {
   const [backgroundColor, setBackgroundColor] = useState("white");
   const [headingColor, setHeadingColor] = useState("#892BE2");
   const [buttonColor, setButtonColor] = useState("#8A2BE2");
+  const [receivingTokenAddress, setReceivingTokenAddress] = useState();
 
   // Sample data for crypto addresses and ENS names
   const cryptoAddresses = [
@@ -114,7 +115,7 @@ export function RecipientDashboardComponent() {
         nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
         rpcUrls: ["https://mainnet.optimism.io"],
         blockExplorerUrls: ["https://optimistic.etherscan.io"],
-        swapperBridgerContract: "0x8a4c14d50c43363a28647188534db7004112091c",
+        swapperBridgerContract: "0x3652eC40C4D8F3e804373455EF155777F250a6E2",
         hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
       ["base"]: {
@@ -124,7 +125,7 @@ export function RecipientDashboardComponent() {
         nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
         rpcUrls: ["https://mainnet.base.org"],
         blockExplorerUrls: ["https://basescan.org"],
-        swapperBridgerContract: "0xeD99908D0697C408b26Ba35fE0800e565042c858",
+        swapperBridgerContract: "0xe0E84235511aC6437C756C1d70e8cCdd8917df36",
         hyperMinter: "0xC2d179166bc9dbB00A03686a5b17eCe2224c2704",
       },
       ["celo"]: {
@@ -134,7 +135,7 @@ export function RecipientDashboardComponent() {
         nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
         rpcUrls: ["https://forno.celo.org"],
         blockExplorerUrls: ["https://explorer.celo.org"],
-        swapperBridgerContract: "0x1e1461464852d6fbf8a19097d14408d657d49457",
+        swapperBridgerContract: "0xFa1aD6310C6540c5430F9ddA657FCE4BdbF1f4df",
         hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
       },
       ["arbitrum"]: {
@@ -144,7 +145,7 @@ export function RecipientDashboardComponent() {
         nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
         rpcUrls: ["https://arb1.arbitrum.io/rpc"],
         blockExplorerUrls: ["https://arbiscan.io"],
-        swapperBridgerContract: "0x51d952a5a93e73096b9b6f807ec37aa7a2fc52da",
+        swapperBridgerContract: "0xb66f6DAC6F61446FD88c146409dA6DA8F8F10f73",
         hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
     };
@@ -219,6 +220,7 @@ export function RecipientDashboardComponent() {
       splitsAddress: "${receiverAddress}",
       hypercertFractionId: "${selectedCampaign?.hypercert_id.split("-")[2]}",
       poolId: ${alloPoolId},
+      receivingTokenAddress: ${receivingTokenAddress},
     }}
     buttonClassName="<YOUR-DONATE-BUTTON-CSS>"
   />`;
@@ -315,6 +317,7 @@ export function RecipientDashboardComponent() {
       backgroundColor: backgroundColor,
       headingColor: headingColor,
       buttonColor: buttonColor,
+      destinationOutputTokenAddress: receivingTokenAddress,
     };
 
     // Add the POST request to send the inputs to /api
@@ -339,7 +342,7 @@ export function RecipientDashboardComponent() {
       nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
       rpcUrls: ["https://mainnet.optimism.io"],
       blockExplorerUrls: ["https://optimistic.etherscan.io"],
-      swapperBridgerContract: "0x8a4c14d50c43363a28647188534db7004112091c",
+      swapperBridgerContract: "0x3652eC40C4D8F3e804373455EF155777F250a6E2",
       hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
     },
     8453: {
@@ -349,7 +352,7 @@ export function RecipientDashboardComponent() {
       nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
       rpcUrls: ["https://mainnet.base.org"],
       blockExplorerUrls: ["https://basescan.org"],
-      swapperBridgerContract: "0xeD99908D0697C408b26Ba35fE0800e565042c858",
+      swapperBridgerContract: "0xe0E84235511aC6437C756C1d70e8cCdd8917df36",
       hyperMinter: "0xC2d179166bc9dbB00A03686a5b17eCe2224c2704",
     },
     42220: {
@@ -359,7 +362,7 @@ export function RecipientDashboardComponent() {
       nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
       rpcUrls: ["https://forno.celo.org"],
       blockExplorerUrls: ["https://explorer.celo.org"],
-      swapperBridgerContract: "0x1e1461464852d6fbf8a19097d14408d657d49457",
+      swapperBridgerContract: "0xFa1aD6310C6540c5430F9ddA657FCE4BdbF1f4df",
       hyperMinter: "0x16bA53B74c234C870c61EFC04cD418B8f2865959",
     },
     42161: {
@@ -369,7 +372,7 @@ export function RecipientDashboardComponent() {
       nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
       rpcUrls: ["https://arb1.arbitrum.io/rpc"],
       blockExplorerUrls: ["https://arbiscan.io"],
-      swapperBridgerContract: "0x51d952a5a93e73096b9b6f807ec37aa7a2fc52da",
+      swapperBridgerContract: "0xb66f6DAC6F61446FD88c146409dA6DA8F8F10f73",
       hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
     },
   };
@@ -419,6 +422,7 @@ export function RecipientDashboardComponent() {
         setReceiverAddress(data.splitsAddress);
         setDonationTitle(data.modalTitle);
         setAlloPoolId(data.poolId);
+        setReceivingTokenAddress(data.destinationOutputTokenAddress);
       } catch (e) {
         setReceiverAddress("");
         setDonationTitle("");
@@ -1037,7 +1041,7 @@ export function RecipientDashboardComponent() {
           </DialogContent>
         </Dialog>
         <Dialog open={isWidgetDialogOpen} onOpenChange={setIsWidgetDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[550px] h-[700px] overflow-auto">
             <DialogHeader>
               <DialogTitle>Donation Widget Code</DialogTitle>
               <DialogDescription>
@@ -1090,6 +1094,18 @@ export function RecipientDashboardComponent() {
                     type="number"
                     onChange={(e) => setAlloPoolId(parseInt(e.target.value))}
                     defaultValue={alloPoolId}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="receivingToken" className="text-right">
+                    Receiving Token
+                  </Label>
+                  <Input
+                    id="receivingToken"
+                    className="col-span-3"
+                    placeholder="Enter title"
+                    onChange={(e) => setReceivingTokenAddress(e.target.value)}
+                    defaultValue={receivingTokenAddress}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
