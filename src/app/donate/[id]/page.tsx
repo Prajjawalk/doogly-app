@@ -12,6 +12,7 @@ import {
 } from "wagmi";
 import { getContract, PublicClient } from "viem";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { AxelarQueryAPI } from "@axelar-network/axelarjs-sdk";
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const account = useAccount();
@@ -109,6 +110,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         {
           internalType: "address",
           name: "inputTokenAddress",
+          type: "address",
+        },
+        {
+          internalType: "address",
+          name: "destinationOutputTokenAddress",
           type: "address",
         },
         {
@@ -292,6 +298,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     setSubmitButtonDisabled(true);
     setSubmitButtonText("Processing...");
 
+    const sdk = new AxelarQueryAPI({
+      environment: "mainnet",
+    });
+
+    const estimatedGas = sdk.estimateGasFee(
+      getChainParams(account.chainId).AxelarChainName,
+      config.destinationChain,
+      BigInt(500000),
+      getNativeToken(account.chainId).symbol
+    );
+    console.log("estimated gas..", estimatedGas);
+
     try {
       if (selectedToken === "native") {
         // For native token transactions
@@ -311,7 +329,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               "0x0000000000000000000000000000000000000000",
             ethers.parseEther(amount),
           ],
-          value: BigInt(100000000000000) + ethers.parseEther(amount),
+          value: BigInt(estimatedGas) * 2n + ethers.parseEther(amount),
         });
       } else {
         // For ERC20 token transactions
@@ -365,7 +383,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               "0x0000000000000000000000000000000000000000",
             donationAmount,
           ],
-          value: BigInt(1000000000000000),
+          value: BigInt(estimatedGas) * 2n,
         });
       }
 
