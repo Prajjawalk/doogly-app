@@ -302,13 +302,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       environment: "mainnet",
     });
 
-    const estimatedGas = sdk.estimateGasFee(
+    const estimatedGas = await sdk.estimateGasFee(
       getChainParams(account.chainId).AxelarChainName,
       config.destinationChain,
       BigInt(500000),
       getNativeToken(account.chainId).symbol
     );
-    console.log("estimated gas..", estimatedGas);
 
     try {
       if (selectedToken === "native") {
