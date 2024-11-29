@@ -27,7 +27,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [donationAmount, setDonationAmount] = useState("0");
   const [submitButtonText, setSubmitButtonText] = useState("Donate");
   const [submitButtonDisabled, setSubmitButtonDisabled] = useState(false);
-  const [selectedToken, setSelectedToken] = useState("");
+  const [selectedToken, setSelectedToken] = useState("native");
 
   // const config = {
   //   destinationChain: "optimism",
@@ -60,6 +60,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       setInitialized(true);
     }
   }, [config, account, initialized]);
+
+  useEffect(() => {
+    const updateTokens = async (newChainId) => {
+      const newUniswapTokens = await fetchUserTokensAndUniswapPools(newChainId);
+
+      setUniswapTokens(newUniswapTokens);
+    };
+
+    updateTokens(account.chainId);
+  }, [account.chainId]);
 
   const swapperBridgerABI = [
     {
@@ -268,19 +278,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const chainSelect = async (newChainId: number) => {
     if (newChainId !== account.chainId) {
       try {
-        console.log(newChainId);
+        setUniswapTokens({});
         await switchChain.switchChainAsync({ chainId: newChainId });
 
-        if (switchChain.isSuccess) {
-          const newUniswapTokens = await fetchUserTokensAndUniswapPools(
-            newChainId
-          );
-
-          setUniswapTokens(newUniswapTokens);
-        }
-
         if (switchChain.error) {
-          console.log(switchChain.error);
           throw new Error(switchChain.error.message);
         }
       } catch (error) {
@@ -306,11 +307,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       getChainParams(account.chainId).AxelarChainName,
       config.destinationChain,
       BigInt(500000),
+      "auto",
       getNativeToken(account.chainId).symbol
     );
 
     try {
-      if (selectedToken === "native") {
+      if (inputTokenAddress == "0x0000000000000000000000000000000000000000") {
         // For native token transactions
         await sendDonation.writeContractAsync({
           address: getChainParams(account.chainId).swapperBridgerContract,
@@ -323,9 +325,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             config.poolId,
             config.splitsAddress,
             config.hypercertFractionId,
-            "0x0000000000000000000000000000000000000000", // native token
+            inputTokenAddress, // native token
             config.destinationOutputTokenAddress ??
-              "0x0000000000000000000000000000000000000000",
+              uniswapTokens["native"].address,
             ethers.parseEther(amount),
           ],
           value: BigInt(estimatedGas) * 2n + ethers.parseEther(amount),
@@ -379,7 +381,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             config.hypercertFractionId,
             inputTokenAddress,
             config.destinationOutputTokenAddress ??
-              "0x0000000000000000000000000000000000000000",
+              uniswapTokens["native"].address,
             donationAmount,
           ],
           value: BigInt(estimatedGas) * 2n,
@@ -638,7 +640,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               htmlFor="crypto-donate-wallet-address"
               className="block mb-2 text-gray-700"
             >
-              Wallet Address
+              Your Address
             </label>
             <input
               id="crypto-donate-wallet-address"

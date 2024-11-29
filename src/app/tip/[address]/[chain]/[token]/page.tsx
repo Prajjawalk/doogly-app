@@ -4,13 +4,14 @@
 import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import {
+  useConnect,
   useAccount,
-  usePublicClient,
+  useClient,
   useSwitchChain,
   useWalletClient,
   useWriteContract,
 } from "wagmi";
-import { getContract, PublicClient } from "viem";
+import { getContract, PublicClient, WalletClient } from "viem";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AxelarQueryAPI } from "@axelar-network/axelarjs-sdk";
 
@@ -23,6 +24,7 @@ export default function Page({
   const sendDonation = useWriteContract();
   const switchChain = useSwitchChain();
   const erc20Write = useWriteContract();
+  const { connect } = useConnect();
 
   const [uniswapTokens, setUniswapTokens] = useState({});
   const [initialized, setInitialized] = useState(false);
@@ -31,7 +33,7 @@ export default function Page({
   const [donationAmount, setDonationAmount] = useState("0");
   const [submitButtonText, setSubmitButtonText] = useState("Tip");
   const [submitButtonDisabled, setSubmitButtonDisabled] = useState(false);
-  const [selectedToken, setSelectedToken] = useState("");
+  const [selectedToken, setSelectedToken] = useState("native");
 
   useEffect(() => {
     const initialize = async () => {
@@ -52,6 +54,16 @@ export default function Page({
       setInitialized(true);
     }
   }, [config, account, initialized]);
+
+  useEffect(() => {
+    const updateTokens = async (newChainId) => {
+      const newUniswapTokens = await fetchUserTokensAndUniswapPools(newChainId);
+
+      setUniswapTokens(newUniswapTokens);
+    };
+
+    updateTokens(account.chainId);
+  }, [account.chainId]);
 
   const swapperBridgerABI = [
     {
@@ -217,7 +229,7 @@ export default function Page({
     },
   ];
 
-  const publicClient = usePublicClient({
+  const publicClient = useClient({
     chainId: account.chainId,
   });
 
@@ -260,19 +272,12 @@ export default function Page({
   const chainSelect = async (newChainId: number) => {
     if (newChainId !== account.chainId) {
       try {
-        console.log(newChainId);
-        await switchChain.switchChainAsync({ chainId: newChainId });
-
-        if (switchChain.isSuccess) {
-          const newUniswapTokens = await fetchUserTokensAndUniswapPools(
-            newChainId
-          );
-
-          setUniswapTokens(newUniswapTokens);
-        }
+        setUniswapTokens({});
+        await switchChain.switchChainAsync({
+          chainId: newChainId,
+        });
 
         if (switchChain.error) {
-          console.log(switchChain.error);
           throw new Error(switchChain.error.message);
         }
       } catch (error) {
@@ -298,11 +303,12 @@ export default function Page({
       getChainParams(account.chainId).AxelarChainName,
       config.chain,
       BigInt(500000),
+      "auto",
       getNativeToken(account.chainId).symbol
     );
 
     try {
-      if (selectedToken === "native") {
+      if (inputTokenAddress == "0x0000000000000000000000000000000000000000") {
         // For native token transactions
         await sendDonation.writeContractAsync({
           address: getChainParams(account.chainId).swapperBridgerContract,
@@ -310,13 +316,14 @@ export default function Page({
           functionName: "sendDonation",
           args: [
             config.chain,
-            config.address,
+            config.destinationAddress ??
+              getChainParams(config.chain).swapperBridgerContract,
             walletAddressInput,
             0,
             config.address,
             0,
-            "0x0000000000000000000000000000000000000000", // native token
-            config.token ?? "0x0000000000000000000000000000000000000000",
+            inputTokenAddress, // native token
+            config.token ?? uniswapTokens["native"].address,
             ethers.parseEther(amount),
           ],
           value: BigInt(estimatedGas) * 2n + ethers.parseEther(amount),
@@ -363,13 +370,14 @@ export default function Page({
           functionName: "sendDonation",
           args: [
             config.chain,
-            config.address,
+            config.destinationAddress ??
+              getChainParams(config.chain).swapperBridgerContract,
             walletAddressInput,
             0,
             config.address,
             0,
             inputTokenAddress,
-            config.token ?? "0x0000000000000000000000000000000000000000",
+            config.token ?? uniswapTokens["native"].address,
             donationAmount,
           ],
           value: BigInt(estimatedGas) * 2n,
@@ -385,7 +393,7 @@ export default function Page({
       alert("Donation failed. Please try again.");
     } finally {
       setSubmitButtonDisabled(false);
-      setSubmitButtonText("Donate");
+      setSubmitButtonText("Tip");
     }
   }
 
@@ -560,7 +568,7 @@ export default function Page({
     return apiKeys[chainId];
   }
 
-  function getChainParams(chainId: number) {
+  function getChainParams(chainId: number | string) {
     const chains = {
       10: {
         chainId: "0xA",
@@ -603,7 +611,15 @@ export default function Page({
         hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
     };
-    return chains[chainId];
+
+    if (typeof chainId === "number") {
+      return chains[chainId];
+    } else {
+      const key = Object.keys(chains).find(
+        (key) => chains[key].AxelarChainName === chainId
+      );
+      return chains[key];
+    }
   }
 
   return (
