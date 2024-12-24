@@ -28,7 +28,6 @@ export default function Page({
 
   const [uniswapTokens, setUniswapTokens] = useState({});
   const [initialized, setInitialized] = useState(false);
-  const [walletAddressInput, setWalletAddressInput] = useState(account.address);
   const [config, setConfig] = useState();
   const [donationAmount, setDonationAmount] = useState("0");
   const [submitButtonText, setSubmitButtonText] = useState("Tip");
@@ -308,7 +307,10 @@ export default function Page({
     );
 
     try {
-      if (inputTokenAddress == "0x0000000000000000000000000000000000000000") {
+      if (
+        inputTokenAddress === "0x0000000000000000000000000000000000000000" ||
+        inputTokenAddress === "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+      ) {
         // For native token transactions
         await sendDonation.writeContractAsync({
           address: getChainParams(account.chainId).swapperBridgerContract,
@@ -318,7 +320,7 @@ export default function Page({
             config.chain,
             config.destinationAddress ??
               getChainParams(config.chain).swapperBridgerContract,
-            walletAddressInput,
+            config.address,
             0,
             config.address,
             0,
@@ -372,7 +374,7 @@ export default function Page({
             config.chain,
             config.destinationAddress ??
               getChainParams(config.chain).swapperBridgerContract,
-            walletAddressInput,
+            config.address,
             0,
             config.address,
             0,
@@ -403,43 +405,48 @@ export default function Page({
     const userTokens = await fetchUserERC20Tokens(account.address, chainId);
 
     try {
+      const stablecoinAddress = await swapperBridgerContract.read.USDC();
+
+      tokens["USDC"] = {
+        symbol: "USDC",
+        name: "USDC",
+        address: stablecoinAddress,
+        decimals: 6,
+      };
+
+      const uniswapFactoryAddress =
+        await swapperBridgerContract.read.UNISWAP_V3_FACTORY();
+
+      const uniswapV3FactoryContract = getContract({
+        address: uniswapFactoryAddress as `0x${string}`,
+        abi: uniswapFactoryABI,
+        client: publicClient as PublicClient,
+      });
+
       for (const token of userTokens) {
         try {
-          const stablecoinAddress = await swapperBridgerContract.read.USDC();
-
-          tokens["USDC"] = {
-            symbol: "USDC",
-            name: "USDC",
-            address: stablecoinAddress,
-            decimals: 6,
-          };
-
-          const uniswapFactoryAddress =
-            await swapperBridgerContract.read.UNISWAP_V3_FACTORY();
-
-          const uniswapV3FactoryContract = getContract({
-            address: uniswapFactoryAddress as `0x${string}`,
-            abi: uniswapFactoryABI,
-            client: publicClient as PublicClient,
-          });
-
           // Check if there's a pool with the stablecoin for this token
-          const poolAddress = await uniswapV3FactoryContract.read.getPool([
-            stablecoinAddress,
-            token.address,
-            3000,
-          ]);
+          const feeTiers = [3000, 10000, 500, 100];
+          for (let j = 0; j < feeTiers.length; j++) {
+            const poolAddress = await uniswapV3FactoryContract.getPool(
+              stablecoinAddress,
+              token.address,
+              feeTiers[j]
+            );
 
-          if (
-            poolAddress != ethers.ZeroAddress ||
-            token.address == stablecoinAddress
-          ) {
-            tokens[token.symbol] = {
-              symbol: token.symbol,
-              name: token.name,
-              address: token.address,
-              decimals: parseInt(token.decimals),
-            };
+            if (
+              poolAddress != ethers.ZeroAddress ||
+              token.address == stablecoinAddress
+            ) {
+              tokens[token.symbol] = {
+                symbol: token.symbol,
+                name: token.name,
+                address: token.address,
+                decimals: parseInt(token.decimals),
+              };
+
+              break;
+            }
           }
         } catch (error) {
           console.error(`Error checking pool for ${token.symbol}:`, error);
@@ -538,6 +545,27 @@ export default function Page({
         name: "Ethereum",
         address: "0x0000000000000000000000000000000000000000",
       },
+      137: {
+        symbol: "POL",
+        name: "Polygon",
+        address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        decimals: 18,
+        axlGas: BigInt("500000000000000000"),
+      },
+      43114: {
+        symbol: "AVAX",
+        name: "Avalanche",
+        address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        decimals: 18,
+        axlGas: BigInt("10000000000000000"),
+      },
+      56: {
+        symbol: "BNB",
+        name: "Binance",
+        address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        decimals: 18,
+        axlGas: BigInt("1000000000000000"),
+      },
     };
     return (
       nativeTokens[chainId] || {
@@ -554,6 +582,10 @@ export default function Page({
       8453: "https://api.basescan.org/api",
       42161: "https://api.arbiscan.io/api",
       42220: "https://api.celoscan.io/api",
+      137: "https://api.polygonscan.com/api",
+      43114:
+        "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan/api",
+      56: "https://api.bscscan.com/api",
     };
     return apiUrls[chainId];
   }
@@ -564,6 +596,9 @@ export default function Page({
       8453: "X4R5GNYKKD34HKQGEVC6SXGHI62EGUYNJ8",
       42220: "4MY7GCBJXMB181R771BY5HRSCAQN2PXTUN",
       42161: "VU2ZRHTKI2HFMEBAVXV5WSN9KZRGEB8841",
+      137: "CHQNNG2ZEAYR98XNZYKEK135P8Y6TUIENH",
+      43114: "",
+      56: "YPTGHNWQ9SFSIZHRBKUPGSWP31CUZG17CG",
     };
     return apiKeys[chainId];
   }
@@ -610,6 +645,36 @@ export default function Page({
         swapperBridgerContract: "0xb66f6DAC6F61446FD88c146409dA6DA8F8F10f73",
         hyperMinter: "0x822F17A9A5EeCFd66dBAFf7946a8071C265D1d07",
       },
+      137: {
+        chainId: "0x89",
+        chainName: "Polygon",
+        AxelarChainName: "Polygon",
+        nativeCurrency: { name: "Polygon", symbol: "POL", decimals: 18 },
+        rpcUrls: ["https://polygon-mainnet.infura.io"],
+        blockExplorerUrls: ["https://polygonscan.com"],
+        swapperBridgerContract: "0x1E1461464852d6FbF8a19097d14408d657d49457",
+        hyperMinter: "0x0000000000000000000000000000000000000000",
+      },
+      43114: {
+        chainId: "0xa86a",
+        chainName: "Avalanche C-Chain",
+        AxelarChainName: "Avalanche",
+        nativeCurrency: { name: "Avalanche", symbol: "AVAX", decimals: 18 },
+        rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
+        blockExplorerUrls: ["https://snowtrace.io"],
+        swapperBridgerContract: "0x1E1461464852d6FbF8a19097d14408d657d49457",
+        hyperMinter: "0x0000000000000000000000000000000000000000",
+      },
+      56: {
+        chainId: "0x38",
+        chainName: "Binance Smart Chain",
+        AxelarChainName: "binance",
+        nativeCurrency: { name: "Binance", symbol: "BNB", decimals: 18 },
+        rpcUrls: ["https://bsc-dataseed.bnbchain.org"],
+        blockExplorerUrls: ["https://bscscan.com"],
+        swapperBridgerContract: "0x73F9fEBd723ebcaa23A6DEd587afbF2a503B303f",
+        hyperMinter: "0x0000000000000000000000000000000000000000",
+      },
     };
 
     if (typeof chainId === "number") {
@@ -638,23 +703,6 @@ export default function Page({
         <div>
           <div className="mb-4">
             <ConnectButton />
-          </div>
-          <div className="mb-4">
-            <label
-              htmlFor="crypto-donate-wallet-address"
-              className="block mb-2 text-gray-700"
-            >
-              Wallet Address
-            </label>
-            <input
-              id="crypto-donate-wallet-address"
-              type="text"
-              className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-              defaultValue={account.address}
-              onChange={(e) =>
-                setWalletAddressInput(e.target.value as `0x${string}`)
-              }
-            />
           </div>
           <div className="mb-4">
             <label
