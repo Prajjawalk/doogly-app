@@ -254,7 +254,7 @@ export function RecipientDashboardComponent() {
       const txId = await client.mintHypercert({
         metaData: metadata.data,
         totalUnits: BigInt(campaignForm.goal) * 10n ** 6n,
-        transferRestriction: TransferRestrictions.FromCreatorOnly,
+        transferRestriction: TransferRestrictions.AllowAll,
       });
       // Set the transaction ID and success state
       setTxId(txId);
