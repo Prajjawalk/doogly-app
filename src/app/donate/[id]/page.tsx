@@ -331,13 +331,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             inputTokenAddress, // native token
             config.destinationOutputTokenAddress ??
               uniswapTokens["native"].address,
-            ethers.parseEther(amount),
+            ethers.utils.parseEther(amount),
           ],
-          value: BigInt(estimatedGas) * 2n + ethers.parseEther(amount),
+          value: BigInt(estimatedGas) * 2n + ethers.utils.parseEther(amount),
         });
       } else {
         // For ERC20 token transactions
-        const donationAmount = ethers.parseUnits(
+        const donationAmount = ethers.utils.parseUnits(
           amount,
           uniswapTokens[selectedToken].decimals
         );
@@ -438,7 +438,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             );
 
             if (
-              poolAddress != ethers.ZeroAddress ||
+              poolAddress != ethers.constants.AddressZero ||
               token.address == stablecoinAddress
             ) {
               tokens[token.symbol] = {

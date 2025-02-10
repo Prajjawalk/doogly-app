@@ -337,7 +337,7 @@ export default function Page() {
     setSubmitButtonText("Processing...");
 
     // For ERC20 token transactions
-    const _donateAmount = ethers.parseUnits(
+    const _donateAmount = ethers.utils.parseUnits(
       String(amount),
       currentToken.decimals
     );
