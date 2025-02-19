@@ -18,8 +18,11 @@ type FinalStepProps = {
 export function FinalStep({ config, styles }: FinalStepProps) {
   const widgetCode = `
 <DooglyButton
-  buttonText="Donate Now"
-  modalTitle="Support Our Cause"
+  // Checkout button text to trigger modal
+  buttonText="Checkout"
+  // Add tailwind css classname for the checkout button
+  buttonClassName="ADD CUSTOM CHECKOUT-BUTTOM STYLE"
+  modalTitle="Checkout with Doogly"
   apiUrl="https://api.doogly.org"
   config={{
     destinationChain: "${config.destinationChain}",
@@ -69,8 +72,6 @@ export function FinalStep({ config, styles }: FinalStepProps) {
   **/
   webhookUrl="WEBHOOK URL"
   webHookData="ADDITIONAL WEBHOOK DATA"
-  // Add tailwind css classname for the checkout button that trigger modal
-  buttonClassName="ADD CUSTOM CHECKOUT-BUTTOM STYLE"
 />
 `;
 
