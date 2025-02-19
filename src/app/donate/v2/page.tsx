@@ -127,6 +127,8 @@ export default function Page() {
   const [currentToken, setCurrentToken] = useState<Token>();
   const [currentChainId, setCurrentChainId] = useState<bigint | string>();
   const [params, setParams] = useState();
+  const [callback, setCallback] =
+    useState<(transactionCallback: transactionCallback) => void>();
   const { wallets } = useWallets();
   const [connected, setConnected] = useState(false);
   const [chainSearchQuery, setChainSearchQuery] = useState("");
@@ -202,6 +204,13 @@ export default function Page() {
       }
 
       setParams(txparams);
+
+      const callbackString = params.get("callback");
+      const callback: (transactionCallback: transactionCallback) => void = eval(
+        `(${callbackString})`
+      );
+      setCallback(callback);
+
       const response = await (await fetch(`${dooglyApi}/info`)).json();
 
       const filteredChains = response.chains.filter(
@@ -210,13 +219,6 @@ export default function Page() {
           i.chainType != ChainType.BTC &&
           i.chainType != ChainType.SOLANA
       );
-
-      // Rearranging the filteredChains to move the last element to the second position
-      const rearrangedChains = [
-        filteredChains[0], // First element remains the same
-        filteredChains[filteredChains.length - 1], // Last element moved to second position
-        ...filteredChains.slice(1, filteredChains.length - 1), // All elements except the first and last
-      ];
 
       setAllTokens(response.tokens);
       setChains(rearrangedChains);
@@ -321,6 +323,92 @@ export default function Page() {
     }
   };
 
+  // Function to get status
+  const getStatus = async (params: any) => {
+    try {
+      const result = await axios.get("status", {
+        params: {
+          transactionId: params.transactionId,
+          fromChainId: params.fromChainId,
+          toChainId: params.toChainId,
+          bridgeType: params.bridgeType,
+        },
+      });
+      return result.data;
+    } catch (error: any) {
+      if (error.response) {
+        console.error("API error:", error.response.data);
+      }
+      console.error("Error with parameters:", params);
+      throw new Error(error.response.data);
+    }
+  };
+
+  // Function to check solana transaction status and execute callback function
+  const updateTransactionStatusAndExecuteCallback = async (
+    transactionId: string,
+    requestId: string,
+    fromChainId: string,
+    toChainId: string,
+    bridgeType?: string
+  ) => {
+    const getStatusParams = bridgeType
+      ? {
+          transactionId,
+          fromChainId,
+          toChainId,
+          bridgeType,
+          requestId,
+        }
+      : {
+          transactionId,
+          requestId,
+          fromChainId,
+          toChainId,
+        };
+
+    let status;
+    const completedStatuses = [
+      "success",
+      "partial_success",
+      "needs_gas",
+      "not_found",
+    ];
+    const maxRetries = 10;
+    let retryCount = 0;
+
+    do {
+      try {
+        status = await getStatus(getStatusParams);
+        console.log(`Route status: ${status.squidTransactionStatus}`);
+        callback({
+          transactionId,
+          fromChainId,
+          toChainId,
+          requestId,
+          status: status.squidTransactionStatus,
+        });
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            console.error("Max retries reached. Transaction not found.");
+            break;
+          }
+          console.log("Transaction not found. Retrying...");
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          continue;
+        } else {
+          throw error;
+        }
+      }
+
+      if (!completedStatuses.includes(status.squidTransactionStatus)) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    } while (!completedStatuses.includes(status.squidTransactionStatus));
+  };
+
   const publicClient = usePublicClient({
     chainId: account.chainId,
   });
@@ -393,6 +481,13 @@ export default function Page() {
       });
 
       if (tx) {
+        await updateTransactionStatusAndExecuteCallback(
+          tx,
+          routeResult.requestId,
+          currentChainId?.toString(),
+          params.toChain
+        );
+
         alert(`Donation successful! Transaction hash: ${tx}`);
         setSubmitButtonText("Donation Successful!");
       }
