@@ -52,6 +52,11 @@ export function TokenSelector({
           />
           {filteredTokenList.map((token) => (
             <SelectItem key={token.address} value={token.address}>
+              <img
+                src={token.logoURI}
+                alt={`${token.name} logo`}
+                className="inline-block w-4 h-4 mr-2"
+              />
               {token.name}
             </SelectItem>
           ))}

@@ -51,6 +51,11 @@ export function ChainSelector({
           />
           {filteredChainList.map((chain) => (
             <SelectItem key={chain.chainId} value={chain.chainId}>
+              <img
+                src={chain.chainIconURI}
+                alt={`${chain.networkName} logo`}
+                className="inline-block w-4 h-4 mr-2"
+              />
               {chain.networkName}
             </SelectItem>
           ))}

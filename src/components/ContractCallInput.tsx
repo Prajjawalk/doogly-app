@@ -17,6 +17,32 @@ import { ethers } from "ethers";
 import { getParsedContractFunctionArgs } from "@/components/Contracts";
 import { Token } from "@0xsquid/squid-types";
 
+const erc20Abi = [
+  {
+    constant: false,
+    inputs: [
+      {
+        name: "_spender",
+        type: "address",
+      },
+      {
+        name: "_value",
+        type: "uint256",
+      },
+    ],
+    name: "approve",
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
+
 type ContractCall = {
   contractAddress?: string;
   functionName?: string;
@@ -36,6 +62,10 @@ type ContractCallInputProps = {
   tokens: Token[];
 };
 
+interface AugmentedAbiFunction extends AbiFunction {
+  uid: string;
+}
+
 export function ContractCallInput({
   contractCalls,
   onContractCallsChange,
@@ -44,13 +74,13 @@ export function ContractCallInput({
 }: ContractCallInputProps) {
   const [abi, setAbi] = useState<Abi>();
   const [currentCall, setCurrentCall] = useState<ContractCall>({});
-  const [functionList, setFunctionList] = useState<AbiFunction[]>([]);
-  const [functionNameList, setFunctionNameList] = useState<string[]>([]);
+  const [functionList, setFunctionList] = useState<AugmentedAbiFunction[]>([]);
   const [selectedFunction, setSelectedFunction] = useState<string>();
   const [showAbiInput, setShowAbiInput] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [tokenList, setTokenList] = useState<Token[]>([]);
   const [filteredTokenList, setFilteredTokenList] = useState<Token[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Callback function to receive form data from child
   const handleFormChange = (updatedForm: Record<string, any>) => {
@@ -68,7 +98,13 @@ export function ContractCallInput({
     if (abi && currentCall.functionName) {
       const data = getParsedContractFunctionArgs(formData);
 
-      const contractInterface = new ethers.utils.Interface(abi as any);
+      const functionAbi: AbiFunction = functionList.find(
+        (f) => f.uid == selectedFunction
+      ) as AbiFunction;
+
+      const contractInterface = new ethers.utils.Interface([
+        functionAbi as any,
+      ]);
       const callData = contractInterface.encodeFunctionData(
         currentCall.functionName,
         data
@@ -79,9 +115,10 @@ export function ContractCallInput({
 
     if (currentCall.isDynamic) {
       if (
-        currentCall.tokenAddress ==
+        currentCall.tokenAddress?.toLowerCase() ==
           "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
-        currentCall.tokenAddress == "0x0000000000000000000000000000000000000000"
+        currentCall.tokenAddress?.toLowerCase() ==
+          "0x0000000000000000000000000000000000000000"
       ) {
         currentCall.callType = 2;
       } else {
@@ -91,12 +128,40 @@ export function ContractCallInput({
       currentCall.callType = 0;
     }
 
-    onContractCallsChange([...contractCalls, currentCall]);
+    if (
+      currentCall.tokenAddress?.toLowerCase() ==
+        "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
+      currentCall.tokenAddress?.toLowerCase() ==
+        "0x0000000000000000000000000000000000000000"
+    ) {
+      onContractCallsChange([...contractCalls, currentCall]);
+    } else {
+      const erc20Interface = new ethers.utils.Interface(erc20Abi);
+      const approveData = erc20Interface.encodeFunctionData("approve", [
+        currentCall.contractAddress,
+        ethers.constants.MaxUint256,
+      ]);
+      onContractCallsChange([
+        ...contractCalls,
+        {
+          contractAddress: currentCall.tokenAddress,
+          functionName: "approve",
+          callType: 1,
+          isDynamic: true,
+          dynamicInputPos: 1,
+          tokenAddress: currentCall.tokenAddress,
+          callData: approveData,
+        },
+        currentCall,
+      ]);
+    }
+
     setCurrentCall({});
     setFormData({});
   };
 
   const handleFetchABI = async () => {
+    setLoading(true);
     try {
       const { abi } = await fetchContractABIFromEtherscan(
         currentCall.contractAddress as `0x${string}`,
@@ -116,12 +181,13 @@ export function ContractCallInput({
           item.type === "function" && item.stateMutability !== "view"
       );
 
-      setFunctionList(functions);
+      const augmentedFunctions = augmentMethodsWithUid(functions);
 
-      const functionNames = functions.map((item: AbiFunction) => item.name);
-      setFunctionNameList(functionNames);
+      setFunctionList(augmentedFunctions);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,9 +197,74 @@ export function ContractCallInput({
     setFilteredTokenList(tokens);
   }, [tokens]);
 
+  const augmentMethodsWithUid = (
+    methods: AbiFunction[]
+  ): AugmentedAbiFunction[] => {
+    // Group methods by their name to identify overloaded functions
+    const methodsByName: Record<string, AbiFunction[]> = {};
+    methods.forEach((method) => {
+      if (!methodsByName[method.name]) {
+        methodsByName[method.name] = [];
+      }
+      methodsByName[method.name].push(method);
+    });
+
+    // Process each method, adding UID with index only for overloaded functions
+    const augmentedMethods: AugmentedAbiFunction[] = [];
+    Object.entries(methodsByName).forEach(([, group]) => {
+      if (group.length > 1) {
+        // overloaded methods
+        group.forEach((method, index) => {
+          augmentedMethods.push({
+            ...method,
+            uid: `${method.name}_${index}`,
+          });
+        });
+      } else {
+        // regular methods
+        augmentedMethods.push({
+          ...group[0],
+          uid: group[0].name,
+        });
+      }
+    });
+
+    return augmentedMethods;
+  };
+
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">Contract Call Details</h2>
+      <h3 className="text-lg font-semibold mb-4">
+        Perform cross-chain interactions
+      </h3>
+      <div className="flex flex-wrap gap-4">
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => handleInputChange("functionName", "lendOnAave")}
+        >
+          Lend on Aave
+        </button>
+        <button
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => handleInputChange("functionName", "stakeOnLido")}
+        >
+          Stake on Lido
+        </button>
+        <button
+          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => handleInputChange("functionName", "buyNFT")}
+        >
+          Buy NFT
+        </button>
+      </div>
+      <div className="mt-4 text-sm">
+        Or
+        <br />
+        <h3 className="text-lg font-semibold mb-4">
+          Create custom contract call
+        </h3>
+      </div>
       <div className="space-y-4">
         <div>
           <Label htmlFor="contract-address">Contract Address</Label>
@@ -145,8 +276,8 @@ export function ContractCallInput({
             }
             placeholder="0x..."
           />
-          <Button className="mt-5" onClick={handleFetchABI}>
-            Fetch Contract ABI
+          <Button className="mt-5" onClick={handleFetchABI} disabled={loading}>
+            {loading ? "Loading..." : "Fetch Contract ABI"}
           </Button>
         </div>
 
@@ -168,16 +299,19 @@ export function ContractCallInput({
             value={selectedFunction}
             onValueChange={(e) => {
               setSelectedFunction(e);
-              handleInputChange("functionName", e);
+              handleInputChange(
+                "functionName",
+                functionList.find((f) => f.uid == e)?.name as string
+              );
             }}
           >
             <SelectTrigger id="function-name">
               <SelectValue placeholder="Select function" />
             </SelectTrigger>
             <SelectContent>
-              {functionNameList.map((func) => (
-                <SelectItem key={func} value={func}>
-                  {func}
+              {functionList.map((func) => (
+                <SelectItem key={func.uid} value={func.uid}>
+                  {func.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -187,9 +321,7 @@ export function ContractCallInput({
         {selectedFunction ? (
           <WriteOnlyFunctionForm
             abiFunction={
-              functionList.find(
-                (i) => i.name == selectedFunction
-              ) as AbiFunction
+              functionList.find((i) => i.uid == selectedFunction) as AbiFunction
             }
             onFormChange={handleFormChange}
           />

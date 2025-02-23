@@ -31,14 +31,14 @@ export function FinalStep({ config, styles }: FinalStepProps) {
   }}
   ${
     config.contractCalls.length > 0
-      ? `postHook={ ${JSON.stringify(
+      ? `postSwapHook={ ${JSON.stringify(
           config.contractCalls.map((call) => {
             return {
               target: call.contractAddress,
               callData: call.callData,
               callType: call.callType ?? 0,
               tokenAddress: call.tokenAddress ?? "",
-              inputPos: call.dynamicInputPos ?? 0,
+              inputPos: parseInt(call.dynamicInputPos) ?? 0,
             };
           })
         )}}`

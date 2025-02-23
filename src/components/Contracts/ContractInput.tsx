@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Tuple } from "./Tuple";
 import { TupleArray } from "./TupleArray";
 import { AbiParameter } from "abitype";
@@ -28,6 +28,8 @@ export const ContractInput = ({
   stateObjectKey,
   paramType,
 }: ContractInputProps) => {
+  const [isSenderAddress, setIsSenderAddress] = useState(false);
+
   const inputProps = {
     name: stateObjectKey,
     value: form?.[stateObjectKey],
@@ -92,6 +94,29 @@ export const ContractInput = ({
         <span className="block text-xs font-extralight leading-none">
           {paramType.type}
         </span>
+        {paramType.type === "address" && (
+          <span
+            className={`cursor-pointer ml-2 px-2 py-1 rounded-full text-xs ${
+              isSenderAddress
+                ? "bg-primary text-white"
+                : "bg-gray-200 text-black"
+            }`}
+            onClick={() => {
+              setIsSenderAddress(!isSenderAddress);
+              if (isSenderAddress) {
+                setForm((form) => ({ ...form, [stateObjectKey]: "" }));
+              } else {
+                setForm((form) => ({
+                  ...form,
+                  [stateObjectKey]:
+                    "0xdeADbEEf1234567890AbCdeF1234567890ABCdEF",
+                }));
+              }
+            }}
+          >
+            msg.sender?
+          </span>
+        )}
       </div>
       {renderInput()}
     </div>
