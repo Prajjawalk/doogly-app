@@ -235,7 +235,7 @@ export function ContractCallInput({
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">Contract Call Details</h2>
-      <h3 className="text-lg font-semibold mb-4">
+      {/* <h3 className="text-lg font-semibold mb-4">
         Perform cross-chain interactions
       </h3>
       <div className="flex flex-wrap gap-4">
@@ -264,7 +264,7 @@ export function ContractCallInput({
         <h3 className="text-lg font-semibold mb-4">
           Create custom contract call
         </h3>
-      </div>
+      </div> */}
       <div className="space-y-4">
         <div>
           <Label htmlFor="contract-address">Contract Address</Label>

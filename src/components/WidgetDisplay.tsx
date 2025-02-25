@@ -39,8 +39,8 @@ export function WidgetDisplay({
   const [tokens, setTokens] = useState<Token[]>([]);
   const [chains, setChains] = useState<ChainData[]>([]);
   const [currentChainId, setCurrentChainId] = useState<bigint | string>();
-  const [modalTitle, setModalTitle] = useState("Support Our Cause");
-  const [submitButtonText, setSubmitButtonText] = useState("Donate");
+  const [modalTitle, setModalTitle] = useState("Checkout with Doogly");
+  const [submitButtonText, setSubmitButtonText] = useState("Checkout");
   const [amount, setDonationAmount] = useState("0");
   const [showQR, setShowQR] = useState(false);
 
@@ -324,7 +324,7 @@ export function WidgetDisplay({
                   className="block mb-2 text-sm font-medium"
                   style={{ color: styles.buttonColor || "#8A2BE2" }}
                 >
-                  Donation Amount
+                  Amount
                 </label>
                 <input
                   placeholder="Enter amount"
@@ -393,6 +393,25 @@ export function WidgetDisplay({
         </div>
       </div>
       <div className="space-y-4">
+        <h3 className="font-semibold text-primary">Customize Modal</h3>
+        <div>
+          <Label htmlFor="modal-title">Modal Title</Label>
+          <Input
+            id="modal-title"
+            type="text"
+            value={modalTitle}
+            onChange={(e) => setModalTitle(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="submit-button-text">Submit Button Text</Label>
+          <Input
+            id="submit-button-text"
+            type="text"
+            value={submitButtonText}
+            onChange={(e) => setSubmitButtonText(e.target.value)}
+          />
+        </div>
         <h3 className="font-semibold text-primary">Customize Colors</h3>
         <div>
           <Label htmlFor="bg-color">Background Color</Label>
