@@ -164,6 +164,7 @@ export default function CrossChainWidgetCustomizer() {
                 onContractCallsChange={(calls) =>
                   setConfig({ ...config, contractCalls: calls })
                 }
+                destinationToken={config.destinationToken}
                 chainId={parseInt(config.destinationChain)}
                 tokens={tokens}
               />

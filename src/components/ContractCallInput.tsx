@@ -16,6 +16,7 @@ import { WriteOnlyFunctionForm } from "./WriteOnlyFunctionForm";
 import { ethers } from "ethers";
 import { getParsedContractFunctionArgs } from "@/components/Contracts";
 import { Token } from "@0xsquid/squid-types";
+import { orgAbi } from "@/data";
 
 const erc20Abi = [
   {
@@ -59,6 +60,7 @@ type ContractCallInputProps = {
   contractCalls: ContractCall[];
   onContractCallsChange: (calls: ContractCall[]) => void;
   chainId: number;
+  destinationToken?: string;
   tokens: Token[];
 };
 
@@ -70,6 +72,7 @@ export function ContractCallInput({
   contractCalls,
   onContractCallsChange,
   chainId,
+  destinationToken,
   tokens,
 }: ContractCallInputProps) {
   const [abi, setAbi] = useState<Abi>();
@@ -81,6 +84,8 @@ export function ContractCallInput({
   const [tokenList, setTokenList] = useState<Token[]>([]);
   const [filteredTokenList, setFilteredTokenList] = useState<Token[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showOrgAddressInput, setShowOrgAddressInput] = useState(false);
+  const [orgAddress, setOrgAddress] = useState("");
 
   // Callback function to receive form data from child
   const handleFormChange = (updatedForm: Record<string, any>) => {
@@ -234,37 +239,80 @@ export function ContractCallInput({
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Contract Call Details</h2>
-      {/* <h3 className="text-lg font-semibold mb-4">
+      {/* <h2 className="text-lg font-semibold mb-4">Contract Call Details</h2> */}
+      <h3 className="text-lg font-semibold mb-4">
         Perform cross-chain interactions
       </h3>
       <div className="flex flex-wrap gap-4">
-        <button
+        {/* <button
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           onClick={() => handleInputChange("functionName", "lendOnAave")}
         >
           Lend on Aave
-        </button>
+        </button> */}
         <button
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => handleInputChange("functionName", "stakeOnLido")}
+          onClick={() => {
+            setShowOrgAddressInput(!showOrgAddressInput);
+          }}
         >
-          Stake on Lido
-        </button>
-        <button
-          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => handleInputChange("functionName", "buyNFT")}
-        >
-          Buy NFT
+          Receive Donations on Endaoment
         </button>
       </div>
+      {showOrgAddressInput && (
+        <div className="space-y-4 mt-4">
+          <Label htmlFor="org-address">Enter Org Address</Label>
+          <Input
+            id="org-address"
+            placeholder="0x..."
+            onChange={(e) => setOrgAddress(e.target.value)}
+          />
+          <Button
+            onClick={() => {
+              const contractInterface = new ethers.utils.Interface(orgAbi);
+              const callData = contractInterface.encodeFunctionData("donate", [
+                0,
+              ]);
+              const currentCall: ContractCall = {
+                contractAddress: orgAddress,
+                functionName: "donate",
+                callType: 1,
+                isDynamic: true,
+                dynamicInputPos: 0,
+                tokenAddress: destinationToken,
+                callData: callData,
+              };
+              const erc20Interface = new ethers.utils.Interface(erc20Abi);
+              const approveData = erc20Interface.encodeFunctionData("approve", [
+                currentCall.contractAddress,
+                ethers.constants.MaxUint256,
+              ]);
+              onContractCallsChange([
+                ...contractCalls,
+                {
+                  contractAddress: currentCall.tokenAddress,
+                  functionName: "approve",
+                  callType: 1,
+                  isDynamic: true,
+                  dynamicInputPos: 1,
+                  tokenAddress: currentCall.tokenAddress,
+                  callData: approveData,
+                },
+                currentCall,
+              ]);
+            }}
+          >
+            Add Contract Call
+          </Button>
+        </div>
+      )}
       <div className="mt-4 text-sm">
         Or
         <br />
         <h3 className="text-lg font-semibold mb-4">
           Create custom contract call
         </h3>
-      </div> */}
+      </div>
       <div className="space-y-4">
         <div>
           <Label htmlFor="contract-address">Contract Address</Label>
