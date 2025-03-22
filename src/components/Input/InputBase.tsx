@@ -34,7 +34,7 @@ export const InputBase = <
   );
 
   return (
-    <div className={`flex bg-neutral rounded-lg text-accent ${modifier}`}>
+    <div className={`flex bg-gray-200 rounded-lg text-accent ${modifier}`}>
       {prefix}
       <input
         className="input input-ghost focus:outline-none focus:bg-transparent focus:text-foreground h-10 px-4 border w-full placeholder:text-gray-400 text-foreground"
