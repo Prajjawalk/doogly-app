@@ -261,45 +261,60 @@ export function ContractCallInput({
       </div>
       {showOrgAddressInput && (
         <div className="space-y-4 mt-4">
-          <Label htmlFor="org-address">Enter Org Address</Label>
+          <Label htmlFor="org-ein">Enter Org EIN</Label>
           <Input
-            id="org-address"
-            placeholder="0x..."
+            id="org-ein"
+            placeholder="EIN..."
             onChange={(e) => setOrgAddress(e.target.value)}
           />
           <Button
-            onClick={() => {
-              const contractInterface = new ethers.utils.Interface(orgAbi);
-              const callData = contractInterface.encodeFunctionData("donate", [
-                0,
-              ]);
-              const currentCall: ContractCall = {
-                contractAddress: orgAddress,
-                functionName: "donate",
-                callType: 1,
-                isDynamic: true,
-                dynamicInputPos: 0,
-                tokenAddress: destinationToken,
-                callData: callData,
-              };
-              const erc20Interface = new ethers.utils.Interface(erc20Abi);
-              const approveData = erc20Interface.encodeFunctionData("approve", [
-                currentCall.contractAddress,
-                ethers.constants.MaxUint256,
-              ]);
-              onContractCallsChange([
-                ...contractCalls,
-                {
-                  contractAddress: currentCall.tokenAddress,
-                  functionName: "approve",
+            onClick={async () => {
+              try {
+                const response = await fetch(
+                  `/api/fetchContractAddress?ein=${orgAddress}`
+                );
+                if (!response.ok) {
+                  throw new Error("Failed to fetch contract address");
+                }
+                const data = await response.json();
+                const contractAddress = data.contractAddress;
+
+                const contractInterface = new ethers.utils.Interface(orgAbi);
+                const callData = contractInterface.encodeFunctionData(
+                  "donate",
+                  [0]
+                );
+                const currentCall: ContractCall = {
+                  contractAddress: contractAddress,
+                  functionName: "donate",
                   callType: 1,
                   isDynamic: true,
-                  dynamicInputPos: 1,
-                  tokenAddress: currentCall.tokenAddress,
-                  callData: approveData,
-                },
-                currentCall,
-              ]);
+                  dynamicInputPos: 0,
+                  tokenAddress: destinationToken,
+                  callData: callData,
+                };
+                const erc20Interface = new ethers.utils.Interface(erc20Abi);
+                const approveData = erc20Interface.encodeFunctionData(
+                  "approve",
+                  [currentCall.contractAddress, ethers.constants.MaxUint256]
+                );
+                onContractCallsChange([
+                  ...contractCalls,
+                  {
+                    contractAddress: currentCall.tokenAddress,
+                    functionName: "approve",
+                    callType: 1,
+                    isDynamic: true,
+                    dynamicInputPos: 1,
+                    tokenAddress: currentCall.tokenAddress,
+                    callData: approveData,
+                  },
+                  currentCall,
+                ]);
+              } catch (error) {
+                console.error(error);
+                alert("Error fetching contract address: " + error);
+              }
             }}
           >
             Add Contract Call

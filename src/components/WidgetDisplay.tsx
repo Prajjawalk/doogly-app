@@ -393,25 +393,6 @@ export function WidgetDisplay({
         </div>
       </div>
       <div className="space-y-4">
-        <h3 className="font-semibold text-primary">Customize Modal</h3>
-        <div>
-          <Label htmlFor="modal-title">Modal Title</Label>
-          <Input
-            id="modal-title"
-            type="text"
-            value={modalTitle}
-            onChange={(e) => setModalTitle(e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="submit-button-text">Submit Button Text</Label>
-          <Input
-            id="submit-button-text"
-            type="text"
-            value={submitButtonText}
-            onChange={(e) => setSubmitButtonText(e.target.value)}
-          />
-        </div>
         <h3 className="font-semibold text-primary">Customize Colors</h3>
         <div>
           <Label htmlFor="bg-color">Background Color</Label>
@@ -449,6 +430,25 @@ export function WidgetDisplay({
             type="color"
             value={styles.headingColor}
             onChange={(e) => handleStyleChange("headingColor", e.target.value)}
+          />
+        </div>
+        <h3 className="font-semibold text-primary">Customize Modal</h3>
+        <div>
+          <Label htmlFor="modal-title">Modal Title</Label>
+          <Input
+            id="modal-title"
+            type="text"
+            value={modalTitle}
+            onChange={(e) => setModalTitle(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="submit-button-text">Submit Button Text</Label>
+          <Input
+            id="submit-button-text"
+            type="text"
+            value={submitButtonText}
+            onChange={(e) => setSubmitButtonText(e.target.value)}
           />
         </div>
       </div>
