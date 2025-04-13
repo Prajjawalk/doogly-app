@@ -37,7 +37,7 @@ export const InputBase = <
     <div className={`flex bg-gray-200 rounded-lg text-accent ${modifier}`}>
       {prefix}
       <input
-        className="input input-ghost focus:outline-none focus:bg-transparent focus:text-foreground h-10 px-4 border w-full placeholder:text-gray-400 text-foreground"
+        className="input input-ghost focus:outline-none focus:bg-transparent focus:text-foreground h-10 px-4 border w-full placeholder:text-gray-400 text-foreground disabled:bg-gray-200"
         placeholder={placeholder}
         name={name}
         value={value?.toString()}

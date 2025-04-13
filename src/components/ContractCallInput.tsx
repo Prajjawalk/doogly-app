@@ -393,6 +393,9 @@ export function ContractCallInput({
           <input
             type="checkbox"
             id="is-dynamic"
+            style={{
+              background: "white",
+            }}
             checked={currentCall.isDynamic || false}
             onChange={(e) => {
               currentCall.isDynamic = !currentCall.isDynamic;
